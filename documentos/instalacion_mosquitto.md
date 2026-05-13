@@ -23,7 +23,7 @@ cd C:\iot-docker
 Ejecutar en PowerShell:
 
 docker network create iot_network
-
+a700063695749f76dbe419cd56238d9ff7861205df9494f4df1c13aaf86bf0af
 4. Crear carpeta de configuración para Mosquitto
 
 Ejecutar en PowerShell:
