@@ -37,7 +37,7 @@
 - [ ] Broker Activo: Verificar la conexión estable entre las placas y el broker MQTT.
 
 ## 3. ESP32-CAM y Visión Artificial (15% de la nota)
-- [x]Transmisión de Imagen: Configurar la ESP32-CAM para enviar snapshots o stream MJPEG.
+- [x] Transmisión de Imagen: Configurar la ESP32-CAM para enviar snapshots o stream MJPEG.
 - [ ] Procesamiento en Node-RED: Implementar el nodo node-red-contrib-tfjs-coco-ssd para la detección de personas.
 - [ ] Alerta de Detección: Publicar un mensaje MQTT y activar indicador en el dashboard al detectar un humano.
 - [ ] Visualización: Mostrar la imagen capturada en tiempo real dentro del dashboard.
