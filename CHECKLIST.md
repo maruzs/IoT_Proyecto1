@@ -23,7 +23,7 @@
 
 ### 3. ESP32-CAM y Visión Artificial (15% de la nota)
 
-* [] **Transmisión de Imagen:** Configurar la **ESP32-CAM** para enviar snapshots o stream MJPEG.
+* [X] **Transmisión de Imagen:** Configurar la **ESP32-CAM** para enviar snapshots o stream MJPEG.
 * [] **Procesamiento en Node-RED:** Implementar el nodo `node-red-contrib-tfjs-coco-ssd` para la detección de personas.
 
 

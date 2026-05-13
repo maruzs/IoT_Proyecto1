@@ -3,8 +3,8 @@
 #include "esp_http_server.h"
 
 // --- CONFIGURACIÓN DE RED ---
-const char* ssid = "Utalca-visitas";
-const char* password = "";
+const char* ssid = "Khato Is Yugen"; //Conectar a la nueva red cada vez 
+const char* password = "999Khato";
 
 // --- PINES DE LA CÁMARA (Modelo AI-Thinker) ---
 #define PWDN_GPIO_NUM     32
@@ -157,5 +157,5 @@ void setup() {
 
 void loop() {
   // El manejo del servidor HTTP se hace por interrupciones en el fondo por FreeRTOS.
-  delay(10000);
+  delay(10);
 }
