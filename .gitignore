@@ -1,0 +1,22 @@
+# Arduino IDE build artifacts
+*.elf
+*.bin
+*.hex
+*.zip
+.ino.*
+
+# Secrets — never commit real credentials
+**/secrets.h
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor backups
+*~
+*.swp
+*.swo
+
+# Arduino IDE temporary files
+build/
+*.tmp
