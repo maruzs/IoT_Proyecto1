@@ -40,3 +40,4 @@
 |⚫ **Negro**|**GND** (Tierra)|**GND**|
 |🟡 **Amarillo**|**SCL** (Reloj)|**Pin 12**|
 |🟢 **Verde**|**SDA** (Datos)|**Pin 11**|
+sa
