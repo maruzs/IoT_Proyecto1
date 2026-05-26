@@ -20,3 +20,7 @@ Thumbs.db
 # Arduino IDE temporary files
 build/
 *.tmp
+
+# Deploy artifacts — credentials and logs
+deploy/nodered/data/flows_cred.json
+deploy/mosquitto/log/
