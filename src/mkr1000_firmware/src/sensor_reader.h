@@ -15,6 +15,8 @@ struct SensorData {
     bool humidityValid;
     int gas;
     bool gasValid;
+    int gasDigital;      // MQ-2 digital output (HIGH/LOW based on module threshold)
+    bool gasDigitalValid;
     int sound;
     bool soundValid;
 };

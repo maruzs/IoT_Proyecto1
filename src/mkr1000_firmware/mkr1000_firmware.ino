@@ -39,6 +39,9 @@ void loop() {
   Serial.print(" | Gas: ");
   Serial.print(data.gas);
 
+  Serial.print(" | Gas DO: ");
+  Serial.print(data.gasDigital == HIGH ? "NORMAL" : "ALERTA");
+
   Serial.print(" | Sonido: ");
   Serial.println(data.sound);
 

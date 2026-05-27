@@ -28,7 +28,8 @@
 // ---------------------------------------------------------------------------
 
 // --- Sensor Pins (configurable) ---
-#define PIN_GAS       A0   // MQ-2 gas sensor (analog input). Options: A0-A5
+#define PIN_GAS       A0   // MQ-2 gas sensor analog output (AO). Options: A0-A5
+#define PIN_GAS_DO    A2   // MQ-2 gas sensor digital output (DO). Options: 0-25
 #define PIN_SONIDO    A1   // MAX4466 sound sensor (analog input). Options: A0-A5
 
 // --- I2C Pins (fixed by MKR1000 hardware) ---

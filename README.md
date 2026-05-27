@@ -30,7 +30,7 @@
 
 | Componente | Pin Sensor | Pin MKR1000 | Tipo de Señal |
 | ---------- | ---------- | ----------- | ------------- |
-| MQ Sensor (Gas)   | VCC / GND / AO  | VCC / GND / **A0** | Analógica |
+| MQ Sensor (Gas)   | VCC / GND / AO / DO | VCC / GND / **A0** / **A2** | AO: Analógica, DO: Digital |
 | MAX4466 (Sonido)  | VCC / GND / OUT | VCC / GND / **A1** | Analógica |
 | SHT30 (Temp/Hum)  | VCC / GND / SDA / SCL | VCC / GND / **11** / **12** | I2C |
 

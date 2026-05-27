@@ -28,6 +28,13 @@ void buildSensorJSON(const SensorData& data, char* buffer, size_t bufferSize, co
         doc["gas"] = (char*)0;
     }
 
+    // Gas Digital (MQ-2 DO)
+    if (data.gasDigitalValid) {
+        doc["gas_digital"] = (data.gasDigital == LOW) ? "ALERTA" : "NORMAL";
+    } else {
+        doc["gas_digital"] = (char*)0;
+    }
+
     // Sonido (MAX4466), publicado como sensor_extra para compatibilidad
     if (data.soundValid) {
         doc["sensor_extra"] = data.sound;

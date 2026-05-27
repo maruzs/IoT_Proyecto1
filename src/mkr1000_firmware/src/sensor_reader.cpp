@@ -7,6 +7,7 @@ static SHT3X sht30(0x44);   // I2C address 0x44
 void initSensors() {
     // Un get() inicial detecta desconexion temprana del SHT30.
     sht30.get();
+    pinMode(PIN_GAS_DO, INPUT);
 }
 
 void initActuators() {
@@ -31,6 +32,10 @@ SensorData readAllSensors() {
     // MQ-2 (gas) — analogRead siempre devuelve valor; se considera valido.
     data.gas = analogRead(PIN_GAS);
     data.gasValid = true;
+
+    // MQ-2 (gas digital) — HIGH = por debajo del umbral, LOW = por encima.
+    data.gasDigital = digitalRead(PIN_GAS_DO);
+    data.gasDigitalValid = true;
 
     // MAX4466 (sonido) — analogRead siempre devuelve valor; se considera valido.
     data.sound = analogRead(PIN_SONIDO);
