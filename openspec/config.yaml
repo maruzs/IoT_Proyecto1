@@ -1,0 +1,34 @@
+schema: spec-driven
+
+context: |
+  Tech stack: Arduino C/C++ (Arduino IDE 2.x), Arduino MKR1000 + ESP32-CAM
+  Architecture: Monolithic .ino firmware → target: modular hexagonal (config, sensors, MQTT, alerts, messages)
+  Libraries: WiFi101, PubSubClient, ArduinoJson, WEMOS_SHT3X, esp_camera, esp_http_server
+  Testing: No automated test framework available (embedded Arduino/C++ firmware)
+  Style: Arduino .ino + .cpp/.h in src/ subdirectories, secrets.h excluded via .gitignore
+  Communication: MQTT broker (Mosquitto), Node-RED dashboard, JSON payloads
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Arduino firmware changes must compile with Arduino IDE 2.x
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+    - Arduino .cpp/.h files must live in src/ subdirectory of .ino folder
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    - Follow existing code patterns
+    tdd: false
+    test_command: ""
+  verify:
+    test_command: ""
+    build_command: "arduino-cli compile (if available) or manual Arduino IDE compile check"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
