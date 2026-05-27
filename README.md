@@ -2,14 +2,14 @@
 
 ## Inventario Placas/ Sensores
 
-| Componente     | Nombre           |
-| -------------- | ---------------- |
-| Placa Port.    | Arduino MKR 1000 |
-| S. Gas         | MQ Sensor        |
-| Camara         | ESP 32-CAM       |
-| S. Temperatura | SHT30            |
-| S. Humedad     | SHT30            |
-| Microfono      | MAX4466          |
+| Componente     | Nombre           | Voltaje 
+| -------------- | ---------------- |-----------
+| Placa Port.    | Arduino MKR 1000 |3.3v
+| S. Gas         | MQ Sensor        |5v
+| Camara         | ESP 32-CAM       |USB
+| S. Temperatura | SHT30            |3.3v
+| S. Humedad     | SHT30            |3.3v
+| Microfono      | MAX4466          |3.3v
 
 ## Inventario Componentes
 
