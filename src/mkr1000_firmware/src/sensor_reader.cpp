@@ -9,6 +9,11 @@ void initSensors() {
     sht30.get();
 }
 
+void initActuators() {
+    pinMode(PIN_LED, OUTPUT);
+    pinMode(PIN_BUZZER, OUTPUT);
+}
+
 SensorData readAllSensors() {
     SensorData data = {};
 

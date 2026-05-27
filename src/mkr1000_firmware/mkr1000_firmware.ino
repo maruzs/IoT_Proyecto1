@@ -1,30 +1,46 @@
 #include "src/config.h"
-#include "src/secrets.h"
 #include "src/sensor_reader.h"
-#include "src/mqtt_manager.h"
-#include "src/alert_system.h"
-#include "src/message_builder.h"
-#include <WiFi101.h>
-
-WiFiClient wifiClient;
 
 void setup() {
   Serial.begin(9600);
+  while (!Serial) { }  // Esperar a que el monitor serial se abra
+
   initSensors();
-  initMQTT(wifiClient, MQTT_SERVER);
-  ensureConnected();
+  initActuators();
+
+  Serial.println("=== MKR1000 - Lectura de Sensores ===");
+  Serial.print("Gas (MQ-2):    pin ");
+  Serial.println(PIN_GAS);
+  Serial.print("Sonido (MAX4466): pin ");
+  Serial.println(PIN_SONIDO);
+  Serial.println("SHT30: I2C (SDA=11, SCL=12)");
+  Serial.println("=====================================");
 }
 
 void loop() {
-  ensureConnected();                 // Reconecta al broker si es necesario
-  mqttLoop();                        // Procesa mensajes MQTT entrantes
   SensorData data = readAllSensors();
-  const char* alert = evaluateAndActuate(data);
-  char json[256];
-  buildSensorJSON(data, json, sizeof(json), alert);
-  publishData(json);
-  if (alert != nullptr) {
-    publishAlert(alert);
+
+  Serial.print("Temperatura: ");
+  if (data.temperatureValid) {
+    Serial.print(data.temperature);
+    Serial.print(" C");
+  } else {
+    Serial.print("ERROR (SHT30 no responde)");
   }
+
+  Serial.print(" | Humedad: ");
+  if (data.humidityValid) {
+    Serial.print(data.humidity);
+    Serial.print(" %");
+  } else {
+    Serial.print("ERROR (SHT30 no responde)");
+  }
+
+  Serial.print(" | Gas: ");
+  Serial.print(data.gas);
+
+  Serial.print(" | Sonido: ");
+  Serial.println(data.sound);
+
   delay(PUBLISH_INTERVAL_MS);
 }

@@ -22,6 +22,9 @@ struct SensorData {
 /** Inicializa sensores (verifica comunicacion con SHT30). */
 void initSensors();
 
+/** Configura los pines de actuadores (LED, buzzer) como OUTPUT. */
+void initActuators();
+
 /** Lee todos los sensores y devuelve un SensorData con flags de validez. */
 SensorData readAllSensors();
 
