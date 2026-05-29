@@ -1,12 +1,18 @@
 #include "sensor_reader.h"
 #include "config.h"
-#include <WEMOS_SHT3X.h>
+#include <Wire.h>   
+#include <Adafruit_SHT31.h>
 
-static SHT3X sht30(0x44);   // I2C address 0x44
+static Adafruit_SHT31 sht30 = Adafruit_SHT31();
+
 
 void initSensors() {
-    // Un get() inicial detecta desconexion temprana del SHT30.
-    sht30.get();
+    // 2. Adafruit usa .begin(address) para inicializar. Retorna true si lo encuentra.
+    if (!sht30.begin(0x44)) {
+        // Opcional: Aquí podrías encender un led de error o mandar un mensaje por Serial
+        // si el sensor no responde en la dirección 0x44
+    }
+    
     pinMode(PIN_GAS_DO, INPUT);
 }
 
@@ -18,10 +24,12 @@ void initActuators() {
 SensorData readAllSensors() {
     SensorData data = {};
 
-    // SHT30: temperatura + humedad
-    if (sht30.get() == 0) {
-        data.temperature = sht30.cTemp;
-        data.humidity    = sht30.humidity;
+    float temp = sht30.readTemperature();
+    float hum = sht30.readHumidity();
+
+    if (!isnan(temp) && !isnan(hum)) {
+        data.temperature = temp; 
+        data.humidity    = hum; 
         data.temperatureValid = true;
         data.humidityValid    = true;
     } else {

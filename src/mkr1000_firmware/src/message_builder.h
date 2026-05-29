@@ -8,6 +8,7 @@
  */
 
 #include "sensor_reader.h"
+#include <Arduino.h> // <--- AGREGA ESTO AQUÍ
 
 /**
  * Construye el JSON de sensores en `buffer`.

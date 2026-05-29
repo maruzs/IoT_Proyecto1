@@ -1,5 +1,6 @@
 #include "alert_system.h"
 #include "config.h"
+#include <Arduino.h>
 
 const char* evaluateAndActuate(const SensorData& data) {
     bool triggered = false;
@@ -26,5 +27,5 @@ const char* evaluateAndActuate(const SensorData& data) {
 }
 
 void setActuatorState(int pin, bool state) {
-    digitalWrite(pin, state ? HIGH : LOW);
+    digitalWrite(pin, state ? 1 : 0);
 }

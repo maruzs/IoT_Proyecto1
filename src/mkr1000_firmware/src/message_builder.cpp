@@ -1,6 +1,7 @@
 #include "message_builder.h"
 #include "config.h"
 #include <ArduinoJson.h>
+#include <stddef.h>
 
 void buildSensorJSON(const SensorData& data, char* buffer, size_t bufferSize, const char* alertMsg) {
     StaticJsonDocument<256> doc;
