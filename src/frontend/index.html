@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT Access Control</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Control de Acceso IoT</h1>
+    </header>
+
+    <main>
+        <!-- Live Camera Feed -->
+        <section id="live-feed">
+            <h2>Cámara en vivo</h2>
+            <img id="camera-feed" src="/api/stream" alt="Camera feed">
+        </section>
+
+        <!-- Detection Card -->
+        <section id="detection">
+            <h2>Última detección</h2>
+            <div id="detection-card">
+                <img id="detection-photo" src="" alt="Detection photo" style="display:none;">
+                <p id="detection-status">Sin actividad</p>
+                <p id="detection-user"></p>
+                <p id="detection-time"></p>
+            </div>
+        </section>
+
+        <!-- Enrollment Form (hidden by default) -->
+        <section id="enrollment" style="display:none;">
+            <h2>Enrolar persona desconocida</h2>
+            <img id="enrollment-photo" src="" alt="Unknown person">
+            <input type="text" id="enrollment-name" placeholder="Nombre" maxlength="100">
+            <button id="enrollment-submit">Enrolar</button>
+            <p id="enrollment-countdown"></p>
+        </section>
+
+        <!-- Manual Controls -->
+        <section id="controls">
+            <button id="btn-open-door">Abrir Puerta</button>
+            <button id="btn-refresh">Refrescar Imagen</button>
+        </section>
+
+        <!-- Access Log -->
+        <section id="log">
+            <h2>Historial de accesos</h2>
+            <table id="access-log">
+                <thead>
+                    <tr><th>Hora</th><th>Usuario</th><th>Evento</th></tr>
+                </thead>
+                <tbody id="log-body"></tbody>
+            </table>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
