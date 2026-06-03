@@ -159,6 +159,7 @@ async function handleCapture() {
     // Update detection card immediately
     updateDetectionCard();
 }
+async function handleOpenDoor() {
     const result = await apiPost('/api/abrir-puerta', {});
     if (result && result.status === 'ok') {
         alert('Puerta abierta');
