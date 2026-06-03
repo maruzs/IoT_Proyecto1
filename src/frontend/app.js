@@ -83,12 +83,12 @@ function updateDetectionCard() {
 
         if (evento === 'Desconocido Detectado' && data.id !== lastEventId) {
             lastEventId = data.id;
-            showEnrollmentForm();
+            showEnrollmentForm(data.enrollment_deadline);
         }
     });
 }
 
-function showEnrollmentForm() {
+function showEnrollmentForm(deadlineISO) {
     const section = document.getElementById('enrollment');
     const countdownEl = document.getElementById('enrollment-countdown');
     const nameInput = document.getElementById('enrollment-name');
@@ -96,7 +96,7 @@ function showEnrollmentForm() {
     section.style.display = 'block';
     nameInput.value = '';
     countdownEl.textContent = '';
-    enrollmentDeadline = Date.now() + 60000;
+    enrollmentDeadline = new Date(deadlineISO).getTime();
 
     if (enrollmentInterval) clearInterval(enrollmentInterval);
 

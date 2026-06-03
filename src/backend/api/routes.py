@@ -20,7 +20,13 @@ class EnrollRequest(BaseModel):
 async def ultimo_evento(request: Request) -> JSONResponse:
     """Get last access event from historial."""
     event = get_last_event()
-    return JSONResponse(content=event or {})
+    result = event or {}
+    # Attach enrollment deadline if active
+    processor: FaceProcessor = request.app.state.processor
+    deadline = processor.get_enrollment_deadline()
+    if deadline is not None:
+        result["enrollment_deadline"] = deadline.isoformat()
+    return JSONResponse(content=result)
 
 
 @router.get("/historial")

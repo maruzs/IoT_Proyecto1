@@ -61,6 +61,19 @@ class FaceProcessor:
 
         return {"estado": "denegado", "usuario": None, "frame": None}
 
+    def get_enrollment_deadline(self) -> datetime | None:
+        """Return the enrollment deadline if an unknown face is cached and the
+        window hasn't expired yet. Returns None otherwise."""
+        if self._cached_unknown_frame is None:
+            return None
+        if self._enrollment_deadline is None:
+            return None
+        if datetime.now() > self._enrollment_deadline:
+            self._cached_unknown_frame = None
+            self._enrollment_deadline = None
+            return None
+        return self._enrollment_deadline
+
     def enroll(self, nombre: str) -> int:
         """Enroll the cached unknown frame.
 
