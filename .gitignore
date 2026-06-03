@@ -24,3 +24,6 @@ build/
 # Deploy artifacts — credentials and logs
 deploy/nodered/data/flows_cred.json
 deploy/mosquitto/log/
+
+# Carpeta que tengo para el estudio/notas que voy tomando
+planificacion/

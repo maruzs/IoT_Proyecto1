@@ -7,6 +7,7 @@
 
 #include "camera_server.h"
 #include "config.h"
+#include "Arduino.h"
 
 // Protocolo de boundary para stream MJPEG
 #define PART_BOUNDARY "123456789000000000000987654321"

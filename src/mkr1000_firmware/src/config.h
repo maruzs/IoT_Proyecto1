@@ -50,7 +50,7 @@
 // ---------------------------------------------------------------------------
 // Timing
 // ---------------------------------------------------------------------------
-#define PUBLISH_INTERVAL_MS 2000  // Intervalo entre publicaciones MQTT
+#define PUBLISH_INTERVAL_MS 100  // Intervalo entre publicaciones MQTT
 
 // ---------------------------------------------------------------------------
 // MQTT Topics (C preprocessor string-literal concatenation)

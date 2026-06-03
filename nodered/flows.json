@@ -1,0 +1,621 @@
+[
+    {
+        "id": "f6f2187d.f17ca8",
+        "type": "tab",
+        "label": "SmartHome IoT",
+        "disabled": false,
+        "info": "Flujo de control y monitoreo para SmartHome IoT"
+    },
+    {
+        "id": "mqtt_broker_config",
+        "type": "mqtt-broker",
+        "name": "Mosquitto Local",
+        "broker": "mosquitto",
+        "port": "1883",
+        "clientid": "nodered-smarthome",
+        "autoConnect": true,
+        "usetls": false,
+        "compatmode": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "smarthome/nodered/status",
+        "birthQos": "0",
+        "birthPayload": "online",
+        "closeTopic": "smarthome/nodered/status",
+        "closeQos": "0",
+        "closePayload": "offline",
+        "willTopic": "smarthome/nodered/status",
+        "willQos": "0",
+        "willPayload": "offline"
+    },
+    {
+        "id": "ui_tab_main",
+        "type": "ui_tab",
+        "name": "SmartHome Dashboard",
+        "icon": "dashboard",
+        "order": 1,
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "ui_group_sensors",
+        "type": "ui_group",
+        "name": "Sensores en Tiempo Real",
+        "tab": "ui_tab_main",
+        "order": 1,
+        "disp": true,
+        "width": "6",
+        "collapse": false
+    },
+    {
+        "id": "ui_group_control",
+        "type": "ui_group",
+        "name": "Control Manual y Actuadores",
+        "tab": "ui_tab_main",
+        "order": 2,
+        "disp": true,
+        "width": "6",
+        "collapse": false
+    },
+    {
+        "id": "ui_group_security",
+        "type": "ui_group",
+        "name": "Presencia y Seguridad (ESP32-CAM)",
+        "tab": "ui_tab_main",
+        "order": 3,
+        "disp": true,
+        "width": "12",
+        "collapse": false
+    },
+    {
+        "id": "ui_group_charts",
+        "type": "ui_group",
+        "name": "Historial de Variables",
+        "tab": "ui_tab_main",
+        "order": 4,
+        "disp": true,
+        "width": "12",
+        "collapse": false
+    },
+    {
+        "id": "mqtt_in_datos",
+        "type": "mqtt in",
+        "z": "f6f2187d.f17ca8",
+        "name": "Suscribir a Datos JSON",
+        "topic": "smarthome/+/datos",
+        "qos": "0",
+        "datatype": "json",
+        "broker": "mqtt_broker_config",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 160,
+        "y": 160,
+        "wires": [
+            [
+                "parse_sensor_data",
+                "csv_logging_trigger"
+            ]
+        ]
+    },
+    {
+        "id": "parse_sensor_data",
+        "type": "function",
+        "z": "f6f2187d.f17ca8",
+        "name": "Extraer Variables",
+        "func": "// Guarda datos en el context global para usar en reglas\nvar temp = msg.payload.temperatura;\nvar hum = msg.payload.humedad;\nvar gas = msg.payload.gas;\nvar sound = msg.payload.sensor_extra; // En el JSON viene como sensor_extra\n\nglobal.set(\"last_temp\", temp);\nglobal.set(\"last_hum\", hum);\nglobal.set(\"last_gas\", gas);\nglobal.set(\"last_sound\", sound);\n\n// Envía mensajes separados para los widgets del dashboard\nreturn [\n    { payload: temp, topic: \"temp\" },\n    { payload: hum, topic: \"hum\" },\n    { payload: gas, topic: \"gas\" },\n    { payload: sound, topic: \"sound\" }\n];",
+        "outputs": 4,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 160,
+        "wires": [
+            [
+                "ui_gauge_temp",
+                "ui_chart_temp"
+            ],
+            [
+                "ui_gauge_hum"
+            ],
+            [
+                "ui_gauge_gas"
+            ],
+            [
+                "ui_text_sound"
+            ]
+        ]
+    },
+    {
+        "id": "ui_gauge_temp",
+        "type": "ui_gauge",
+        "z": "f6f2187d.f17ca8",
+        "name": "Temperatura",
+        "group": "ui_group_sensors",
+        "order": 1,
+        "width": 3,
+        "height": 3,
+        "gtype": "gage",
+        "title": "Temperatura",
+        "label": "°C",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "50",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "28",
+        "seg2": "35",
+        "diff": false,
+        "className": "",
+        "x": 630,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "ui_gauge_hum",
+        "type": "ui_gauge",
+        "z": "f6f2187d.f17ca8",
+        "name": "Humedad",
+        "group": "ui_group_sensors",
+        "order": 2,
+        "width": 3,
+        "height": 3,
+        "gtype": "gage",
+        "title": "Humedad",
+        "label": "%",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "100",
+        "colors": [
+            "#3399ff",
+            "#00b500",
+            "#e6e600"
+        ],
+        "seg1": "30",
+        "seg2": "70",
+        "diff": false,
+        "className": "",
+        "x": 620,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "ui_gauge_gas",
+        "type": "ui_gauge",
+        "z": "f6f2187d.f17ca8",
+        "name": "Nivel de Gas",
+        "group": "ui_group_sensors",
+        "order": 3,
+        "width": 6,
+        "height": 3,
+        "gtype": "compass",
+        "title": "Gas (MQ-2)",
+        "label": "ppm",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "1024",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "300",
+        "seg2": "600",
+        "diff": false,
+        "className": "",
+        "x": 630,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "ui_text_sound",
+        "type": "ui_text",
+        "z": "f6f2187d.f17ca8",
+        "group": "ui_group_sensors",
+        "order": 4,
+        "width": 6,
+        "height": 1,
+        "name": "Sonido",
+        "label": "Sensor Extra (Sonido):",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "x": 610,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "ui_chart_temp",
+        "type": "ui_chart",
+        "z": "f6f2187d.f17ca8",
+        "name": "Gráfico de Temp",
+        "group": "ui_group_charts",
+        "order": 1,
+        "width": 12,
+        "height": 4,
+        "label": "Historial de Temperatura (°C)",
+        "chartType": "line",
+        "legend": "false",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "Cargando datos...",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": 1,
+        "removeOlderPoints": "",
+        "removeOlderUnit": "h",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#ffbb78",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 840,
+        "y": 100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ui_switch_led",
+        "type": "ui_switch",
+        "z": "f6f2187d.f17ca8",
+        "name": "Control LED",
+        "label": "LED de Alerta",
+        "tooltip": "Encender/Apagar LED de alerta remotamente",
+        "group": "ui_group_control",
+        "order": 1,
+        "width": 6,
+        "height": 1,
+        "passthru": true,
+        "decouple": "false",
+        "topic": "control/led",
+        "style": "",
+        "onvalue": "ON",
+        "onvalueType": "str",
+        "onicon": "",
+        "oncolor": "",
+        "offvalue": "OFF",
+        "offvalueType": "str",
+        "officon": "",
+        "offcolor": "",
+        "animate": true,
+        "className": "",
+        "x": 150,
+        "y": 380,
+        "wires": [
+            [
+                "mqtt_out_led"
+            ]
+        ]
+    },
+    {
+        "id": "ui_switch_buzzer",
+        "type": "ui_switch",
+        "z": "f6f2187d.f17ca8",
+        "name": "Control Buzzer",
+        "label": "Zumbador (Buzzer)",
+        "tooltip": "Encender/Apagar zumbador remotamente",
+        "group": "ui_group_control",
+        "order": 2,
+        "width": 6,
+        "height": 1,
+        "passthru": true,
+        "decouple": "false",
+        "topic": "control/buzzer",
+        "style": "",
+        "onvalue": "ON",
+        "onvalueType": "str",
+        "onicon": "",
+        "oncolor": "",
+        "offvalue": "OFF",
+        "offvalueType": "str",
+        "officon": "",
+        "offcolor": "",
+        "animate": true,
+        "className": "",
+        "x": 160,
+        "y": 440,
+        "wires": [
+            [
+                "mqtt_out_buzzer"
+            ]
+        ]
+    },
+    {
+        "id": "mqtt_out_led",
+        "type": "mqtt out",
+        "z": "f6f2187d.f17ca8",
+        "name": "Publicar control LED",
+        "topic": "smarthome/equipoXX/control/led",
+        "qos": "0",
+        "retain": "false",
+        "respTopic": "",
+        "contentType": "",
+        "userProperties": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "mqtt_broker_config",
+        "x": 420,
+        "y": 380,
+        "wires": []
+    },
+    {
+        "id": "mqtt_out_buzzer",
+        "type": "mqtt out",
+        "z": "f6f2187d.f17ca8",
+        "name": "Publicar control Buzzer",
+        "topic": "smarthome/equipoXX/control/buzzer",
+        "qos": "0",
+        "retain": "false",
+        "respTopic": "",
+        "contentType": "",
+        "userProperties": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "mqtt_broker_config",
+        "x": 430,
+        "y": 440,
+        "wires": []
+    },
+    {
+        "id": "ui_button_capture",
+        "type": "ui_button",
+        "z": "f6f2187d.f17ca8",
+        "name": "Capturar Imagen",
+        "group": "ui_group_security",
+        "order": 1,
+        "width": 3,
+        "height": 1,
+        "passthru": false,
+        "label": "Capturar Foto",
+        "tooltip": "Solicitar captura a la ESP32-CAM",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "camera_alt",
+        "x": 160,
+        "y": 520,
+        "wires": [
+            [
+                "mqtt_out_camara_control"
+            ]
+        ]
+    },
+    {
+        "id": "mqtt_out_camara_control",
+        "type": "mqtt out",
+        "z": "f6f2187d.f17ca8",
+        "name": "Publicar control Cámara",
+        "topic": "smarthome/equipoXX/camara/control",
+        "qos": "0",
+        "retain": "false",
+        "respTopic": "",
+        "contentType": "",
+        "userProperties": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "mqtt_broker_config",
+        "x": 430,
+        "y": 520,
+        "wires": []
+    },
+    {
+        "id": "mqtt_in_camara_evento",
+        "type": "mqtt in",
+        "z": "f6f2187d.f17ca8",
+        "name": "Presencia y Rostros",
+        "topic": "smarthome/equipoXX/camara/evento",
+        "qos": "0",
+        "datatype": "json",
+        "broker": "mqtt_broker_config",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 150,
+        "y": 620,
+        "wires": [
+            [
+                "process_vision_data"
+            ]
+        ]
+    },
+    {
+        "id": "process_vision_data",
+        "type": "function",
+        "z": "f6f2187d.f17ca8",
+        "name": "Procesar Visión",
+        "func": "var human = msg.payload.human; // true / false\nvar faces = msg.payload.faces; // Array de nombres\n\nvar presenceText = human ? \"¡HUMANO DETECTADO!\" : \"Nadie en cámara\";\nvar facesText = (faces && faces.length > 0) ? faces.join(\", \") : \"Ningún rostro reconocido\";\n\nreturn [\n    { payload: presenceText },\n    { payload: facesText },\n    { payload: human ? \"#ff3333\" : \"#33cc33\" } // Color de alerta\n];",
+        "outputs": 3,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 620,
+        "wires": [
+            [
+                "ui_text_presence"
+            ],
+            [
+                "ui_text_faces"
+            ],
+            [
+                "ui_status_indicator"
+            ]
+        ]
+    },
+    {
+        "id": "ui_text_presence",
+        "type": "ui_text",
+        "z": "f6f2187d.f17ca8",
+        "group": "ui_group_security",
+        "order": 2,
+        "width": 4,
+        "height": 1,
+        "name": "Presencia Humana",
+        "label": "Presencia:",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "x": 650,
+        "y": 580,
+        "wires": []
+    },
+    {
+        "id": "ui_text_faces",
+        "type": "ui_text",
+        "z": "f6f2187d.f17ca8",
+        "group": "ui_group_security",
+        "order": 3,
+        "width": 5,
+        "height": 1,
+        "name": "Rostros",
+        "label": "Rostros Reconocidos:",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "x": 620,
+        "y": 620,
+        "wires": []
+    },
+    {
+        "id": "ui_status_indicator",
+        "type": "ui_template",
+        "z": "f6f2187d.f17ca8",
+        "group": "ui_group_security",
+        "order": 4,
+        "width": 3,
+        "height": 1,
+        "name": "Indicador Visual",
+        "format": "<div style=\"display: flex; align-items: center; justify-content: center; height: 100%;\">\n    <div style=\"width: 20px; height: 20px; border-radius: 50%; background-color: {{msg.payload}}; box-shadow: 0 0 10px {{msg.payload}};\"></div>\n    <span style=\"margin-left: 10px; font-weight: bold;\">Estado</span>\n</div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnClientConnect": true,
+        "layout": "row-spread",
+        "className": "",
+        "x": 640,
+        "y": 660,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ui_camera_feed",
+        "type": "ui_template",
+        "z": "f6f2187d.f17ca8",
+        "group": "ui_group_security",
+        "order": 5,
+        "width": 12,
+        "height": 6,
+        "name": "Stream ESP32-CAM",
+        "format": "<div style=\"text-align: center;\">\n    <h3>Cámara en Vivo (ESP32-CAM)</h3>\n    <!-- Reemplazar localhost por la IP real de tu ESP32-CAM en tu red local -->\n    <img src=\"http://192.168.1.100/\" style=\"width: 100%; max-width: 640px; border: 3px solid #333; border-radius: 8px;\" onerror=\"this.src='https://placehold.co/640x480?text=Camara+Sin+Conexion'\" />\n</div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnClientConnect": true,
+        "layout": "row-spread",
+        "className": "",
+        "x": 660,
+        "y": 720,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "csv_logging_trigger",
+        "type": "function",
+        "z": "f6f2187d.f17ca8",
+        "name": "Formato CSV",
+        "func": "var temp = msg.payload.temperatura || \"\";\nvar hum = msg.payload.humedad || \"\";\nvar gas = msg.payload.gas || \"\";\nvar sound = msg.payload.sensor_extra || \"\";\nvar alert = msg.payload.alerta || \"NORMAL\";\nvar timestamp = new Date().toISOString();\n\nmsg.payload = timestamp + \",\" + temp + \",\" + hum + \",\" + gas + \",\" + sound + \",\" + alert;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 240,
+        "wires": [
+            [
+                "write_csv_file"
+            ]
+        ]
+    },
+    {
+        "id": "write_csv_file",
+        "type": "file",
+        "z": "f6f2187d.f17ca8",
+        "name": "Guardar en CSV",
+        "filename": "/data/historial.csv",
+        "filenameType": "str",
+        "appendNewline": true,
+        "createDir": true,
+        "overwriteFile": "false",
+        "encoding": "utf8",
+        "x": 620,
+        "y": 340,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "rules_evaluator",
+        "type": "function",
+        "z": "f6f2187d.f17ca8",
+        "name": "Reglas de Control Automático",
+        "func": "var temp = msg.payload.temperatura;\nvar gas = msg.payload.gas;\nvar alertTriggered = false;\nvar alertMsg = \"\";\n\n// Regla 1: Temperatura alta\nif (temp && temp > 30) {\n    alertTriggered = true;\n    alertMsg += \"⚠️ ¡Temperatura crítica: \" + temp + \"°C! \";\n}\n\n// Regla 2: Gas detectado\nif (gas && gas > 400) {\n    alertTriggered = true;\n    alertMsg += \"🔥 ¡Alerta de Gas detectada: \" + gas + \" ppm!\";\n}\n\nif (alertTriggered) {\n    return [\n        { payload: \"ON\", topic: \"control/led\" },      // Activar LED\n        { payload: \"ON\", topic: \"control/buzzer\" },   // Activar Buzzer\n        { payload: alertMsg }                         // Mensaje de Telegram\n    ];\n} else {\n    return [\n        null,\n        null,\n        null\n    ];\n}",
+        "outputs": 3,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 390,
+        "y": 80,
+        "wires": [
+            [
+                "mqtt_out_led"
+            ],
+            [
+                "mqtt_out_buzzer"
+            ],
+            [
+                "telegram_notification_trigger"
+            ]
+        ]
+    },
+    {
+        "id": "telegram_notification_trigger",
+        "type": "debug",
+        "z": "f6f2187d.f17ca8",
+        "name": "Alerta Telegram (Falsa)",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 660,
+        "y": 40,
+        "wires": []
+    }
+]
