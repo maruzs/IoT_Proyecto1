@@ -30,9 +30,9 @@ class MQTTCommandOutput(CommandOutput):
         )
         insert_event("Desconocido Detectado")
 
-    def notify_access(self, user_name: str) -> None:
+    def notify_access(self, user_name: str, user_id: int | None = None) -> None:
         self._publish(
             "acceso/estado",
             json.dumps({"estado": "permitido", "usuario": user_name}),
         )
-        insert_event("Entrada Automática")
+        insert_event("Entrada Automática", usuario_id=user_id)

@@ -19,9 +19,9 @@ class LocalCommandOutput(CommandOutput):
         print("DESCONOCIDO DETECTADO")
         insert_event("Desconocido Detectado")
 
-    def notify_access(self, user_name: str) -> None:
+    def notify_access(self, user_name: str, user_id: int | None = None) -> None:
         print(f"ACCESO PERMITIDO: {user_name}")
-        insert_event("Entrada Automática")
+        insert_event("Entrada Automática", usuario_id=user_id)
 
     def show_frame(self, frame: np.ndarray) -> None:
         cv2.imshow("IoT Access Control", frame)

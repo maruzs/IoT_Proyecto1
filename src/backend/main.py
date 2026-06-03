@@ -87,7 +87,9 @@ async def _processing_loop():
                     result = await asyncio.to_thread(processor.process_burst, frames_buffer)
                     if result["estado"] == "permitido":
                         await asyncio.to_thread(
-                            command_output.notify_access, result["usuario"]
+                            command_output.notify_access,
+                            result["usuario"],
+                            result.get("usuario_id"),
                         )
                         await asyncio.to_thread(command_output.door_open, 3)
                     else:

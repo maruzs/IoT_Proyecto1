@@ -16,6 +16,6 @@ class CommandOutput(ABC):
         ...
 
     @abstractmethod
-    def notify_access(self, user_name: str) -> None:
+    def notify_access(self, user_name: str, user_id: int | None = None) -> None:
         """Notify that an authorized user was granted access."""
         ...

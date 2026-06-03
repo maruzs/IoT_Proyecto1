@@ -47,6 +47,7 @@ class FaceProcessor:
                     return {
                         "estado": "permitido",
                         "usuario": match["nombre"],
+                        "usuario_id": match["id"],
                         "frame": None,
                     }
 
