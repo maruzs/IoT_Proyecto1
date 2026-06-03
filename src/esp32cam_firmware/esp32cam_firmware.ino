@@ -3,6 +3,7 @@
 #include "src/camera_server.h"
 #include "src/mqtt_bridge.h"
 #include <WiFi.h>
+#include "Arduino.h"
 
 WiFiClient wifiClient;
 
@@ -22,6 +23,8 @@ void setup() {
         Serial.print(".");
     }
     Serial.println("\nWiFi OK");
+    Serial.print("Camara lista! Mira el stream en: http://");
+    Serial.println(WiFi.localIP());
     if (!initCamera()) { Serial.println("Camara fallo"); return; }
     startCameraServer();
     initCameraMQTT(wifiClient, MQTT_SERVER);
