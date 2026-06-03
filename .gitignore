@@ -21,6 +21,9 @@ Thumbs.db
 build/
 *.tmp
 
+# Python bytecode
+__pycache__/
+
 # Deploy artifacts — credentials and logs
 deploy/nodered/data/flows_cred.json
 deploy/mosquitto/log/
