@@ -6,7 +6,7 @@ import cv2
 import face_recognition
 import numpy as np
 
-from ..database.db import get_all_users, insert_user, insert_event
+from ..database.db import get_all_users, insert_user
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,6 @@ class FaceProcessor:
             for _bbox, encoding in faces:
                 match = self._match_face(encoding)
                 if match:
-                    insert_event("Entrada Automática", match["id"])
                     return {
                         "estado": "permitido",
                         "usuario": match["nombre"],
@@ -53,7 +52,6 @@ class FaceProcessor:
 
         if self._cached_unknown_frame is not None:
             self._enrollment_deadline = datetime.now() + timedelta(seconds=60)
-            insert_event("Desconocido Detectado")
             return {
                 "estado": "denegado",
                 "usuario": None,
@@ -88,7 +86,6 @@ class FaceProcessor:
         encoding = faces[0][1]
         encoding_blob = pickle.dumps(encoding)
         user_id = insert_user(nombre, encoding_blob)
-        insert_event("Entrada Automática", user_id)
 
         self._cached_unknown_frame = None
         self._enrollment_deadline = None

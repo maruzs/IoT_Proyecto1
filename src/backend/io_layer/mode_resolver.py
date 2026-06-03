@@ -10,7 +10,6 @@ from .mqtt_output import MQTTCommandOutput
 
 def resolve_mode(
     publish_func: Callable[[str, str], None] | None = None,
-    topic_base: str = "smarthome/equipo00",
 ) -> tuple[VideoSource, CommandOutput]:
     """Return the (VideoSource, CommandOutput) pair for the current runtime mode.
 
@@ -22,7 +21,7 @@ def resolve_mode(
     if mode == "PROD_MQTT":
         if publish_func is None:
             raise ValueError("PROD_MQTT mode requires a publish_func")
-        return (MQTTVideoSource(), MQTTCommandOutput(publish_func, topic_base))
+        return (MQTTVideoSource(), MQTTCommandOutput(publish_func))
     if mode == "DEV_LOCAL":
         return (LocalVideoSource(), LocalCommandOutput())
     raise ValueError(f"Unknown MODE: {mode}")

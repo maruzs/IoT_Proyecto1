@@ -29,7 +29,6 @@ async def startup():
         mqtt_client = MQTTClient()
         video_source, command_output = resolve_mode(
             publish_func=mqtt_client.publish,
-            topic_base=mqtt_client.topic_base,
         )
         mqtt_client.set_url_callback(video_source.set_url)
         mqtt_client.connect()
