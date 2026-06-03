@@ -6,7 +6,7 @@ from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel
 
-from ..database.db import get_last_event, get_history, insert_event
+from ..database.db import get_last_event, get_history, insert_event, _to_chile_time
 from ..face_processor.processor import FaceProcessor
 
 router = APIRouter(prefix="/api")
@@ -25,7 +25,7 @@ async def ultimo_evento(request: Request) -> JSONResponse:
     processor: FaceProcessor = request.app.state.processor
     deadline = processor.get_enrollment_deadline()
     if deadline is not None:
-        result["enrollment_deadline"] = deadline.isoformat()
+        result["enrollment_deadline"] = _to_chile_time(deadline.isoformat())
         result["enrollable"] = True
     else:
         result["enrollable"] = False

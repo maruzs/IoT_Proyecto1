@@ -1,6 +1,24 @@
 import os
 import sqlite3
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
+
+_utc = timezone.utc
+# Chile: UTC-4 standard, UTC-3 summer (America/Santiago)
+_chile_offset = timedelta(hours=-4)
+_chile_tz = timezone(_chile_offset)
+
+
+def _to_chile_time(utc_str: str) -> str:
+    """Convert UTC timestamp string to Chile time string."""
+    try:
+        dt = datetime.fromisoformat(utc_str)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=_utc)
+        local = dt.astimezone(_chile_tz)
+        return local.strftime("%Y-%m-%d %H:%M:%S")
+    except (ValueError, TypeError):
+        return utc_str
 
 _DB_PATH = os.environ.get("DB_PATH", "/app/data/access_control.db")
 _conn: sqlite3.Connection | None = None
@@ -86,7 +104,7 @@ def get_history(limit: int = 50) -> list[dict]:
     )
     rows = cur.fetchall()
     return [
-        {"id": r[0], "timestamp": r[1], "evento": r[2], "usuario": r[3]}
+        {"id": r[0], "timestamp": _to_chile_time(r[1]), "evento": r[2], "usuario": r[3]}
         for r in rows
     ]
 
@@ -105,4 +123,4 @@ def get_last_event() -> dict | None:
     row = cur.fetchone()
     if row is None:
         return None
-    return {"id": row[0], "timestamp": row[1], "evento": row[2], "usuario": row[3]}
+    return {"id": row[0], "timestamp": _to_chile_time(row[1]), "evento": row[2], "usuario": row[3]}
