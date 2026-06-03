@@ -20,8 +20,13 @@ class LocalVideoSource(VideoSource):
         """Open the camera if not already open. Returns True on success."""
         if self._cap is not None and self._cap.isOpened():
             return True
-        self._cap = cv2.VideoCapture(0)
+        try:
+            self._cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
+        except Exception:
+            self._cap = None
+            return False
         if not self._cap.isOpened():
+            self._cap.release()
             self._cap = None
             return False
         return True

@@ -50,6 +50,7 @@ services:
       - DB_PATH=/app/data/access_control.db
       - DISPLAY=${DISPLAY}
       - TZ=America/Santiago
+      - OPENCV_VIDEOIO_BACKEND=V4L2
     depends_on:
       mosquitto:
         condition: service_healthy
