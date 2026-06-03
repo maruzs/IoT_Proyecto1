@@ -111,6 +111,8 @@ async def run_capture(request, duration: float = 10.0):
         return {"estado": "error", "mensaje": "Error interno durante la captura"}
     finally:
         app.state.capturing = False
+        # Release camera so it turns off
+        await asyncio.to_thread(video_source.release)
 
 
 if __name__ == "__main__":
