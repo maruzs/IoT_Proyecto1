@@ -19,9 +19,9 @@ class FaceProcessor:
         self._enrollment_deadline: datetime | None = None
         self._best_bbox_area: float = 0
         self._match_counter: dict[int, int] = {}  # user_id -> consecutive matches
-        self._MIN_CONSECUTIVE_MATCHES = 2          # frames confirming same face
-        self._TOLERANCE = 0.5                       # stricter than default 0.6
-        self._MIN_CONFIDENCE = 0.55                 # minimum confidence to accept match
+        self._MIN_CONSECUTIVE_MATCHES = 3  # frames confirming same face
+        self._TOLERANCE = 0.45              # strict: fewer false positives
+        self._MIN_CONFIDENCE = 0.60         # minimum confidence to accept match
 
     def process_burst(self, frames: list[np.ndarray]) -> dict:
         """Process a burst of frames (5s capture).
