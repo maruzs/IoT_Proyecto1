@@ -74,14 +74,15 @@ function updateDetectionCard() {
         const evento = data.evento || 'Sin actividad';
         let statusText = 'Sin actividad';
         if (evento === 'Entrada Automática') statusText = 'Permitido';
-        else if (evento === 'Desconocido Detectado') statusText = 'Denegado';
+        else if (evento === 'Desconocido Detectado') statusText = 'Denegado — rostro detectado';
+        else if (evento === 'Sin Rostro') statusText = 'Sin rostro';
         else if (evento === 'Apertura Manual') statusText = 'Apertura Manual';
 
         statusEl.textContent = statusText;
         userEl.textContent = data.usuario || 'Desconocido';
         timeEl.textContent = formatTimestamp(data.timestamp);
 
-        if (evento === 'Desconocido Detectado' && data.id !== lastEventId) {
+        if (data.enrollable && data.id !== lastEventId) {
             lastEventId = data.id;
             showEnrollmentForm(data.enrollment_deadline);
         }

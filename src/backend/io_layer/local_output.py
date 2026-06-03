@@ -16,8 +16,11 @@ class LocalCommandOutput(CommandOutput):
         global _cached_unknown_frame
         if frame is not None:
             _cached_unknown_frame = frame.copy()
-        print("DESCONOCIDO DETECTADO")
-        insert_event("Desconocido Detectado")
+            print("DESCONOCIDO DETECTADO")
+            insert_event("Desconocido Detectado")
+        else:
+            print("SIN ROSTRO — no se detecto ninguna cara")
+            insert_event("Sin Rostro")
 
     def notify_access(self, user_name: str, user_id: int | None = None) -> None:
         print(f"ACCESO PERMITIDO: {user_name}")

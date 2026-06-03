@@ -19,16 +19,19 @@ class MQTTCommandOutput(CommandOutput):
         time.sleep(duration)
         self._publish("control/led_puerta", json.dumps({"accion": "OFF"}))
 
-    def notify_unknown(self, frame: np.ndarray) -> None:
-        self._publish(
-            "acceso/estado",
-            json.dumps({"estado": "denegado", "usuario": "desconocido"}),
-        )
-        self._publish(
-            "acceso/enrolar",
-            json.dumps({"accion": "enrolar", "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S")}),
-        )
-        insert_event("Desconocido Detectado")
+    def notify_unknown(self, frame: np.ndarray | None) -> None:
+        if frame is not None:
+            self._publish(
+                "acceso/estado",
+                json.dumps({"estado": "denegado", "usuario": "desconocido"}),
+            )
+            self._publish(
+                "acceso/enrolar",
+                json.dumps({"accion": "enrolar", "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S")}),
+            )
+            insert_event("Desconocido Detectado")
+        else:
+            insert_event("Sin Rostro")
 
     def notify_access(self, user_name: str, user_id: int | None = None) -> None:
         self._publish(

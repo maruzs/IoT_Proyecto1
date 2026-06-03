@@ -27,6 +27,9 @@ async def ultimo_evento(request: Request) -> JSONResponse:
     deadline = processor.get_enrollment_deadline()
     if deadline is not None:
         result["enrollment_deadline"] = deadline.isoformat()
+        result["enrollable"] = True
+    else:
+        result["enrollable"] = False
     return JSONResponse(content=result)
 
 

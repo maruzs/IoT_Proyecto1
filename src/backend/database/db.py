@@ -33,7 +33,8 @@ def init_db() -> None:
             evento TEXT NOT NULL CHECK(evento IN (
                 'Entrada Automática',
                 'Apertura Manual',
-                'Desconocido Detectado'
+                'Desconocido Detectado',
+                'Sin Rostro'
             ))
         );
         """
