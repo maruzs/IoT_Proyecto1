@@ -70,48 +70,68 @@ app.include_router(routes.router)
 
 
 async def run_capture(request, duration: float = 10.0):
-    """Run a capture session: collect frames for `duration` seconds,
-    process the burst, and emit the result via CommandOutput."""
+    """Run a capture session: process frames in 3s sub-bursts,
+    emitting results to DB as they happen so the frontend updates live."""
     io = request.app.state.io
     processor = request.app.state.processor
     video_source, command_output = io
 
     app.state.capturing = True
+    SUB_BURST = 3.0  # process every 3 seconds
     frames_buffer = []
+    last_result = {"estado": "sin_resultado"}
     deadline = asyncio.get_event_loop().time() + duration
+    next_process = asyncio.get_event_loop().time() + SUB_BURST
 
     try:
         while asyncio.get_event_loop().time() < deadline:
             frame = await asyncio.to_thread(video_source.read_frame)
             if frame is not None:
                 frames_buffer.append(frame)
-            await asyncio.sleep(0.033)  # ~30 FPS
 
-        if not frames_buffer:
-            return {"estado": "sin_frames", "mensaje": "No se recibieron frames de la cámara"}
+            # Process sub-burst every SUB_BURST seconds
+            if frames_buffer and asyncio.get_event_loop().time() >= next_process:
+                result = await asyncio.to_thread(processor.process_burst, frames_buffer)
+                if result["estado"] == "permitido":
+                    await asyncio.to_thread(
+                        command_output.notify_access,
+                        result["usuario"],
+                        result.get("usuario_id"),
+                    )
+                    await asyncio.to_thread(command_output.door_open, 3)
+                elif result.get("frame") is not None:
+                    await asyncio.to_thread(
+                        command_output.notify_unknown, result.get("frame")
+                    )
+                last_result = {"estado": result["estado"], "usuario": result.get("usuario")}
+                frames_buffer = []
+                next_process = asyncio.get_event_loop().time() + SUB_BURST
 
-        result = await asyncio.to_thread(processor.process_burst, frames_buffer)
+            await asyncio.sleep(0.033)
 
-        if result["estado"] == "permitido":
-            await asyncio.to_thread(
-                command_output.notify_access,
-                result["usuario"],
-                result.get("usuario_id"),
-            )
-            await asyncio.to_thread(command_output.door_open, 3)
-        else:
-            await asyncio.to_thread(
-                command_output.notify_unknown, result.get("frame")
-            )
+        # Process remaining frames at the end
+        if frames_buffer:
+            result = await asyncio.to_thread(processor.process_burst, frames_buffer)
+            if result["estado"] == "permitido":
+                await asyncio.to_thread(
+                    command_output.notify_access,
+                    result["usuario"],
+                    result.get("usuario_id"),
+                )
+                await asyncio.to_thread(command_output.door_open, 3)
+            elif result.get("frame") is not None:
+                await asyncio.to_thread(
+                    command_output.notify_unknown, result.get("frame")
+                )
+            last_result = {"estado": result["estado"], "usuario": result.get("usuario")}
 
-        return {"estado": result["estado"], "usuario": result.get("usuario")}
+        return last_result
 
     except Exception:
         logger.exception("Capture session failed")
         return {"estado": "error", "mensaje": "Error interno durante la captura"}
     finally:
         app.state.capturing = False
-        # Release camera so it turns off
         await asyncio.to_thread(video_source.release)
 
 
