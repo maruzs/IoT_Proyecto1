@@ -12,5 +12,6 @@
 
 bool initCamera();
 void startCameraServer();
+void stopCameraServer();
 
 #endif

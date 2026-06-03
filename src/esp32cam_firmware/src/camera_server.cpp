@@ -115,3 +115,10 @@ void startCameraServer() {
         httpd_register_uri_handler(stream_httpd, &index_uri);
     }
 }
+
+void stopCameraServer() {
+    if (stream_httpd != NULL) {
+        httpd_stop(stream_httpd);
+        stream_httpd = NULL;
+    }
+}

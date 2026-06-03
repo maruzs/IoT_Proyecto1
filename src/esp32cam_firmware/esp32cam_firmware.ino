@@ -2,17 +2,22 @@
 #include "src/secrets.h"
 #include "src/camera_server.h"
 #include "src/mqtt_bridge.h"
+#include "src/burst_capture.h"
 #include <WiFi.h>
 #include "Arduino.h"
 
 WiFiClient wifiClient;
 
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
-    char msg[32] = {0};
-    unsigned int n = length < 31 ? length : 31;
+    char msg[128] = {0};
+    unsigned int n = length < 127 ? length : 127;
     memcpy(msg, payload, n);
     msg[n] = '\0';
     Serial.print("CMD: "); Serial.println(msg);
+
+    if (strcmp(topic, TOPIC_CAMARA_CAPTURA) == 0) {
+        handleBurstCommand(msg);
+    }
 }
 
 void setup() {
@@ -26,7 +31,6 @@ void setup() {
     Serial.print("Camara lista! Mira el stream en: http://");
     Serial.println(WiFi.localIP());
     if (!initCamera()) { Serial.println("Camara fallo"); return; }
-    startCameraServer();
     initCameraMQTT(wifiClient, MQTT_SERVER);
     ensureCameraMQTTConnected();
     subscribeToCameraControl(mqttCallback);
@@ -36,5 +40,6 @@ void setup() {
 void loop() {
     if (!isCameraMQTTConnected()) ensureCameraMQTTConnected();
     mqttLoop();
+    checkBurstTimeout();
     delay(MQTT_LOOP_DELAY_MS);
 }

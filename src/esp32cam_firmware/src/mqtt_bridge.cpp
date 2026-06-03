@@ -33,9 +33,15 @@ bool publishCameraEvent(const char* event) {
     return cameraClient.publish(TOPIC_CAMARA_EVENTO, payload);
 }
 
+bool publishToTopic(const char* topic, const char* payload) {
+    if (!cameraClient.connected()) return false;
+    return cameraClient.publish(topic, payload);
+}
+
 void subscribeToCameraControl(void (*callback)(char*, byte*, unsigned int)) {
     cameraClient.setCallback(callback);
     cameraClient.subscribe(TOPIC_CAMARA_CONTROL);
+    cameraClient.subscribe(TOPIC_CAMARA_CAPTURA);
 }
 
 void mqttLoop() {

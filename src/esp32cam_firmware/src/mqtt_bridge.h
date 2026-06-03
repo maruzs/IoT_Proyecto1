@@ -15,6 +15,7 @@ void initCameraMQTT(WiFiClient& wifiClient, const char* server);
 bool ensureCameraMQTTConnected();
 bool isCameraMQTTConnected();
 bool publishCameraEvent(const char* event);
+bool publishToTopic(const char* topic, const char* payload);
 void subscribeToCameraControl(void (*callback)(char*, byte*, unsigned int));
 void mqttLoop();
 
