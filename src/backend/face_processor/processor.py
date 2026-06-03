@@ -18,6 +18,10 @@ class FaceProcessor:
         self._cached_unknown_frame: np.ndarray | None = None
         self._enrollment_deadline: datetime | None = None
         self._best_bbox_area: float = 0
+        self._match_counter: dict[int, int] = {}  # user_id -> consecutive matches
+        self._MIN_CONSECUTIVE_MATCHES = 2          # frames confirming same face
+        self._TOLERANCE = 0.5                       # stricter than default 0.6
+        self._MIN_CONFIDENCE = 0.55                 # minimum confidence to accept match
 
     def process_burst(self, frames: list[np.ndarray]) -> dict:
         """Process a burst of frames (5s capture).
@@ -28,6 +32,7 @@ class FaceProcessor:
         self._cached_unknown_frame = None
         self._enrollment_deadline = None
         self._best_bbox_area = 0
+        self._match_counter.clear()
 
         for frame in frames:
             try:
@@ -43,11 +48,12 @@ class FaceProcessor:
 
             for _bbox, encoding in faces:
                 match = self._match_face(encoding)
-                if match:
+                if match and self._confirm_match(match):
                     return {
                         "estado": "permitido",
                         "usuario": match["nombre"],
                         "usuario_id": match["id"],
+                        "confidence": match["confidence"],
                         "frame": None,
                     }
 
@@ -129,7 +135,7 @@ class FaceProcessor:
 
         known_encodings = [pickle.loads(u["rostro_encoding"]) for u in users]
         matches = face_recognition.compare_faces(
-            known_encodings, encoding, tolerance=0.6
+            known_encodings, encoding, tolerance=self._TOLERANCE
         )
 
         if True not in matches:
@@ -139,12 +145,22 @@ class FaceProcessor:
         best_idx = min(
             (i for i, m in enumerate(matches) if m), key=lambda i: distances[i]
         )
+        confidence = float(1 - distances[best_idx])
+
+        if confidence < self._MIN_CONFIDENCE:
+            return None
 
         return {
             "id": users[best_idx]["id"],
             "nombre": users[best_idx]["nombre"],
-            "confidence": float(1 - distances[best_idx]),
+            "confidence": confidence,
         }
+
+    def _confirm_match(self, match: dict) -> bool:
+        """Require consecutive frame matches to avoid false positives."""
+        uid = match["id"]
+        self._match_counter[uid] = self._match_counter.get(uid, 0) + 1
+        return self._match_counter[uid] >= self._MIN_CONSECUTIVE_MATCHES
 
     def _select_best_frame(self, frame: np.ndarray, faces: list[tuple]) -> None:
         """Keep frame with largest face bbox area."""
