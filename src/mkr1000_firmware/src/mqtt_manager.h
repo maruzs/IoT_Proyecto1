@@ -23,7 +23,10 @@ bool publishData(const char* payload);
 /** Publica un mensaje de alerta en TOPIC_ALERTA. */
 bool publishAlert(const char* alertMsg);
 
-/** Suscribe a los topicos de control remoto (LED y buzzer). */
+/** Publica el estado del sensor de presencia en TOPIC_PRESENCIA. */
+bool publishPresence(int estado);
+
+/** Suscribe a los topicos de control remoto (LED, buzzer y puerta). */
 void subscribeToControlTopics();
 
 /** Procesa el loop interno del cliente MQTT (keepalive + callbacks). */

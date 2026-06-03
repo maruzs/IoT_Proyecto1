@@ -1,6 +1,7 @@
 #include "mqtt_manager.h"
 #include "config.h"
 #include "alert_system.h"
+#include <ArduinoJson.h>
 #include <string.h>
 
 static PubSubClient mqttClient;
@@ -32,9 +33,20 @@ bool publishAlert(const char* alertMsg) {
     return mqttClient.publish(TOPIC_ALERTA, alertMsg);
 }
 
+bool publishPresence(int estado) {
+    if (!mqttClient.connected()) return false;
+    StaticJsonDocument<64> doc;
+    doc["sensor"] = "HC-SR501";
+    doc["estado"] = estado;
+    char buffer[64];
+    serializeJson(doc, buffer);
+    return mqttClient.publish(TOPIC_PRESENCIA, buffer);
+}
+
 void subscribeToControlTopics() {
     mqttClient.subscribe(TOPIC_CONTROL_LED);
     mqttClient.subscribe(TOPIC_CONTROL_BUZZER);
+    mqttClient.subscribe(TOPIC_CONTROL_LED_PUERTA);
 }
 
 void mqttLoop() {
@@ -53,5 +65,15 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
         setActuatorState(PIN_LED, state);
     } else if (strcmp(topic, TOPIC_CONTROL_BUZZER) == 0) {
         setActuatorState(PIN_BUZZER, state);
+    } else if (strcmp(topic, TOPIC_CONTROL_LED_PUERTA) == 0) {
+        StaticJsonDocument<64> doc;
+        DeserializationError error = deserializeJson(doc, payload, length);
+        if (!error) {
+            const char* accion = doc["accion"];
+            if (accion) {
+                bool doorState = (strcmp(accion, "ON") == 0 || strcmp(accion, "on") == 0);
+                setActuatorState(PIN_LED_PUERTA, doorState);
+            }
+        }
     }
 }
