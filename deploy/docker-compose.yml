@@ -30,6 +30,7 @@ services:
     restart: unless-stopped
 
   backend:
+    privileged: true
     build:
       context: ..
       dockerfile: deploy/reconocimiento/Dockerfile
@@ -37,11 +38,17 @@ services:
       - "8000:8000"
     volumes:
       - ./data:/app/data
+    devices:
+      - /dev/video0:/dev/video0
+      - /dev/video1:/dev/video1
+    group_add:
+      - "983"  # video group
     environment:
-      - MODE=PROD_MQTT
+      - MODE=DEV_LOCAL
       - EQUIPO_ID=equipoXX
       - MQTT_BROKER=mosquitto
       - DB_PATH=/app/data/access_control.db
+      - DISPLAY=${DISPLAY}
     depends_on:
       mosquitto:
         condition: service_healthy
