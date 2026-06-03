@@ -1,55 +1,66 @@
 # Node-RED SmartHome IoT - Configuración y Flujo de Trabajo
 
-Este directorio contiene los flujos y scripts necesarios para programar y sincronizar Node-RED de manera local desde el repositorio de Git, sin perder cambios y permitiendo a todos los integrantes del grupo trabajar cómodamente desde su propio editor de código.
+Este directorio contiene los flujos, scripts de sincronización y la configuración para el Bot de Telegram de nuestro proyecto SmartHome IoT.
 
 ---
 
-## 1. Requisitos Previos en Docker
+## 1. Instalación de Nodos en Docker
 
-Para que los flujos carguen sin errores, el contenedor Docker de Node-RED necesita tener instalados los nodos del Dashboard y de Telegram.
-
-Ejecuta el siguiente comando en tu terminal para instalar las dependencias directamente dentro del contenedor:
+Para que los flujos carguen correctamente, debes instalar los nodos del Dashboard y de Telegram dentro del contenedor. Ejecuta en tu terminal:
 
 ```bash
 docker exec -u 0 mynodered npm install --prefix /data node-red-dashboard node-red-contrib-telegrambot
 ```
 
-> [!IMPORTANT]
-> **Reinicio Obligatorio:** Después de instalar nuevos nodos por primera vez, debes reiniciar el contenedor para que Node-RED registre los nuevos tipos de nodos:
-> ```bash
-> docker restart mynodered
-> ```
-
----
-
-## 2. Flujo de Trabajo y Sincronización
-
-Los flujos de Node-RED se definen localmente en el archivo [flows.json](file:///home/maruzs/Desktop/IoT_Proyecto1/nodered/flows.json). Para que cualquier cambio que realices se aplique a tu contenedor Docker de inmediato sin tener que reiniciar el contenedor, hemos creado un script automatizado.
-
-Cada vez que edites `flows.json`, ejecuta en tu terminal:
+### Solución de Red/DNS (Obligatorio en hotspots y VPNs)
+Para evitar que Node-RED sufra de bloqueos por IPv6 (lo que hace que la API de Telegram de un timeout de 30 segundos), inyecta este parche que fuerza la resolución IPv4 en el archivo `settings.js` del contenedor:
 
 ```bash
-./nodered/sync.sh
+docker exec -u 0 mynodered sh -c "echo \"const dns = require('dns'); const originalLookup = dns.lookup; dns.lookup = function(hostname, options, callback) { if (typeof options === 'function') { callback = options; options = {}; } else if (typeof options === 'number') { options = { family: options }; } else if (!options) { options = {}; } options.family = 4; return originalLookup.call(this, hostname, options, callback); };\" | cat - /data/settings.js > temp && mv temp /data/settings.js && chown node-red:node-red /data/settings.js"
 ```
 
-### ¿Qué hace el script `sync.sh`?
-1. Copia el archivo `flows.json` local al volumen del contenedor en `/data/flows.json`.
-2. Llama al API Admin de Node-RED para **recargar instantáneamente** los flujos sin necesidad de reiniciar el Docker (tarda < 2 segundos).
+Además, desactiva la encriptación de credenciales para poder compartir los flujos en texto plano de forma local:
+
+```bash
+docker exec mynodered sed -i 's/\/\/credentialSecret: "a-secret-key",/credentialSecret: false,/g' /data/settings.js
+```
+
+Finalmente, **reinicia el contenedor** para aplicar todo:
+
+```bash
+docker restart mynodered
+```
 
 ---
 
-## 3. Acceso a las Interfaces
+## 2. Configurar el Bot de Telegram
 
-Una vez sincronizado el flujo:
-* **Editor de Node-RED (Visual/UI):** [http://localhost:1880/](http://localhost:1880/)
-* **Dashboard de SmartHome (Panel de control):** [http://localhost:1880/ui](http://localhost:1880/ui)
+1. Crea una copia del archivo de ejemplo para tus credenciales locales:
+   ```bash
+   cp nodered/flows_cred.json.example nodered/flows_cred.json
+   ```
+2. Abre `nodered/flows_cred.json` e introduce la API Key del bot de Telegram que nos compartimos de manera privada. (Este archivo `flows_cred.json` está ignorado en `.gitignore` para no subir claves públicas a GitHub).
 
 ---
 
-## 4. Detalles del Flujo Implementado
+## 3. Sincronización de Cambios
 
-* **Broker MQTT:** Se conecta automáticamente al contenedor `mosquitto` en el puerto `1883` usando la red interna de Docker `iot_network`.
-* **Suscripción de datos:** Suscrito a `smarthome/+/datos` para parsear lecturas de temperatura, humedad, gas y sonido en tiempo real.
-* **Registro Histórico:** Los datos recibidos se guardan de forma continua con su timestamp en `/data/historial.csv` dentro de la persistencia del contenedor.
-* **Control Manual:** Dispone de botones en el Dashboard para interactuar con la cámara y mandar comandos `ON/OFF` a los actuadores (LED y Buzzer) mediante los tópicos correspondientes.
-* **Reglas Automáticas:** Si la temperatura supera los 30°C o el gas supera los 400 ppm, se activa automáticamente la alarma local (LED y Buzzer) y se prepara el envío del mensaje de alerta.
+Para que cualquier cambio en los archivos locales `flows.json` y `flows_cred.json` se vea reflejado instantáneamente en tu navegador, ejecuta el script de sincronización en tu laptop:
+
+```bash
+python3 nodered/sync.py
+```
+
+### ¿Qué hace `sync.py`?
+1. Sube el archivo `flows.json` mediante la API Admin de Node-RED.
+2. Inyecta y asocia tu API Key de Telegram de forma dinámica al nodo de configuración sin necesidad de reiniciar Docker.
+
+---
+
+## 4. Acceso y Comandos
+
+* **Dashboard de SmartHome:** [http://localhost:1880/ui](http://localhost:1880/ui) (Grilla 2x2 optimizada sin superposición de elementos).
+* **Editor de Node-RED:** [http://localhost:1880/](http://localhost:1880/)
+* **Comandos del Bot (Grupo/Privado):**
+  - `/status` - Muestra temperatura, humedad, gas, sonido y fecha en tiempo real.
+  - `/ayuda` - Lista los comandos del bot.

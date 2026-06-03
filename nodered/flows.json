@@ -30,6 +30,24 @@
         "willPayload": "offline"
     },
     {
+        "id": "telegram_bot_config",
+        "type": "telegram bot",
+        "botname": "SmartHomeBot",
+        "usernames": "",
+        "chatids": "",
+        "baseapiurl": "",
+        "updatemode": "polling",
+        "pollinterval": "1",
+        "usesocks": false,
+        "sockshost": "",
+        "socksport": "",
+        "socksusername": "",
+        "sockspassword": "",
+        "bothotsp": "",
+        "botkey": "8845478827:AAF-VIRWIy5rhSP1f8kcBNmZYypsXF47x6s",
+        "verbose": false
+    },
+    {
         "id": "ui_tab_main",
         "type": "ui_tab",
         "name": "SmartHome Dashboard",
@@ -91,7 +109,7 @@
         "rap": true,
         "rh": 0,
         "inputs": 0,
-        "x": 160,
+        "x": 140,
         "y": 160,
         "wires": [
             [
@@ -112,7 +130,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 380,
+        "x": 360,
         "y": 160,
         "wires": [
             [
@@ -582,7 +600,7 @@
         "type": "function",
         "z": "f6f2187d.f17ca8",
         "name": "Reglas de Control Automático",
-        "func": "var temp = msg.payload.temperatura;\nvar gas = msg.payload.gas;\nvar alertTriggered = false;\nvar alertMsg = \"\";\n\nif (temp && temp > 30) {\n    alertTriggered = true;\n    alertMsg += \"⚠️ ¡Temperatura crítica: \" + temp + \"°C! \";\n}\n\nif (gas && gas > 400) {\n    alertTriggered = true;\n    alertMsg += \"🔥 ¡Alerta de Gas detectada: \" + gas + \" ppm!\";\n}\n\nif (alertTriggered) {\n    return [\n        { payload: \"ON\", topic: \"control/led\" },\n        { payload: \"ON\", topic: \"control/buzzer\" },\n        { payload: alertMsg }\n    ];\n} else {\n    return [\n        null,\n        null,\n        null\n    ];\n}",
+        "func": "var temp = msg.payload.temperatura;\nvar gas = msg.payload.gas;\nvar alertTriggered = false;\nvar alertMsg = \"\";\n\nif (temp && temp > 30) {\n    alertTriggered = true;\n    alertMsg += \"⚠️ ¡Temperatura crítica: \" + temp + \"°C!\\n\";\n}\n\nif (gas && gas > 1020) {\n    alertTriggered = true;\n    alertMsg += \"🔥 ¡Alerta de Gas detectada: \" + gas + \" ppm!\\n\";\n}\n\nif (alertTriggered) {\n    var telegramMsg = {\n        payload: {\n            chatId: -1003906928304,\n            type: \"message\",\n            content: \"🚨 *[SmartHome ALERTA]*\\n\\n\" + alertMsg + \"\\n*Timestamp:* \" + new Date().toLocaleString()\n        }\n    };\n    \n    return [\n        { payload: \"ON\", topic: \"control/led\" },\n        { payload: \"ON\", topic: \"control/buzzer\" },\n        telegramMsg\n    ];\n} else {\n    return [\n        null,\n        null,\n        null\n    ];\n}",
         "outputs": 3,
         "noerr": 0,
         "initialize": "",
@@ -598,25 +616,102 @@
                 "mqtt_out_buzzer"
             ],
             [
-                "telegram_notification_trigger"
+                "telegram_out"
             ]
         ]
     },
     {
-        "id": "telegram_notification_trigger",
+        "id": "telegram_in",
+        "type": "telegram receiver",
+        "z": "f6f2187d.f17ca8",
+        "name": "Comandos Telegram",
+        "bot": "telegram_bot_config",
+        "saveDataDir": "",
+        "filterCommands": false,
+        "x": 140,
+        "y": 740,
+        "wires": [
+            [
+                "telegram_router"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "telegram_router",
+        "type": "function",
+        "z": "f6f2187d.f17ca8",
+        "name": "Router de Comandos",
+        "func": "var command = msg.payload.content || msg.payload.text;\nvar chatId = msg.payload.chatId || (msg.payload.chat && msg.payload.chat.id) || msg.chatId;\n\n// Debug de entrada en consola de Node-RED\nnode.log(\"Recibido comando: \" + command + \" de chatId: \" + chatId);\n\nif (command === \"/status\") {\n    var temp = global.get(\"last_temp\") || \"No disponible\";\n    var hum = global.get(\"last_hum\") || \"No disponible\";\n    var gas = global.get(\"last_gas\") || \"No disponible\";\n    var sound = global.get(\"last_sound\") || \"No disponible\";\n    \n    msg.payload = {\n        chatId: chatId,\n        type: \"message\",\n        content: \"📊 *SmartHome Status*\\n\\n\" +\n                 \"🌡️ *Temp:* \" + temp + \" °C\\n\" +\n                 \"💧 *Humedad:* \" + hum + \" %\\n\" +\n                 \"🔥 *Gas (MQ-2):* \" + gas + \" ppm\\n\" +\n                 \"🔊 *Sonido:* \" + sound + \"\\n\\n\" +\n                 \"*Timestamp:* \" + new Date().toLocaleString()\n    };\n    node.log(\"Respondiendo con status a: \" + chatId);\n    return [msg, null];\n} else if (command === \"/ayuda\" || command === \"/start\") {\n    msg.payload = {\n        chatId: chatId,\n        type: \"message\",\n        content: \"🤖 *SmartHome Bot*\\n\\n\" +\n                 \"Comandos disponibles:\\n\" +\n                 \"🔹 `/status` - Muestra lecturas en tiempo real\\n\" +\n                 \"🔹 `/ayuda` - Lista los comandos\"\n    };\n    node.log(\"Respondiendo con ayuda a: \" + chatId);\n    return [msg, null];\n}\nnode.log(\"Comando desconocido ignorado.\");\nreturn null;",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 390,
+        "y": 740,
+        "wires": [
+            [
+                "telegram_out",
+                "debug_router_out"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "telegram_out",
+        "type": "telegram sender",
+        "z": "f6f2187d.f17ca8",
+        "name": "Enviar a Telegram",
+        "bot": "telegram_bot_config",
+        "haserroroutput": false,
+        "outputs": 1,
+        "x": 660,
+        "y": 740,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "debug_router_out",
         "type": "debug",
         "z": "f6f2187d.f17ca8",
-        "name": "Alerta Telegram (Falsa)",
+        "name": "Debug Router Salida",
         "active": true,
         "tosidebar": true,
-        "console": false,
+        "console": true,
         "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
+        "complete": "true",
+        "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 660,
-        "y": 40,
+        "x": 670,
+        "y": 800,
         "wires": []
+    },
+    {
+        "id": "inject_telegram_test",
+        "type": "inject",
+        "z": "f6f2187d.f17ca8",
+        "name": "Inyectar Alerta de Prueba",
+        "props": [
+            {
+                "p": "payload",
+                "v": "{\"chatId\":1511171371,\"type\":\"message\",\"content\":\"🔔 Prueba de inyección manual desde Node-RED\"}",
+                "vt": "json"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 390,
+        "y": 860,
+        "wires": [
+            [
+                "telegram_out"
+            ]
+        ]
     }
 ]

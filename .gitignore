@@ -7,6 +7,7 @@
 
 # Secrets — never commit real credentials
 **/secrets.h
+**/flows_cred.json
 
 # OS files
 .DS_Store
