@@ -27,3 +27,6 @@ __pycache__/
 # Deploy artifacts — credentials and logs
 deploy/nodered/data/flows_cred.json
 deploy/mosquitto/log/
+
+# Planificación y notas del equipo
+planificacion/
