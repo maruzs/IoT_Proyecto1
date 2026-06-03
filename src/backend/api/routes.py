@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from ..database.db import get_last_event, get_history, insert_event
 from ..face_processor.processor import FaceProcessor
+from ..main import run_capture
 
 router = APIRouter(prefix="/api")
 
@@ -100,3 +101,19 @@ async def stream(request: Request):
         _mjpeg_generator(video_source),
         media_type="multipart/x-mixed-replace; boundary=frame",
     )
+
+
+@router.post("/capturar")
+async def capturar(request: Request) -> JSONResponse:
+    """Trigger a 10-second capture session. Processes the burst and
+    returns the result. Blocks until capture completes."""
+    if request.app.state.capturing:
+        return JSONResponse(
+            content={"estado": "ocupado", "mensaje": "Captura en progreso"},
+            status_code=409,
+        )
+
+    async with request.app.state.capture_lock:
+        result = await run_capture(request, duration=10.0)
+
+    return JSONResponse(content=result)

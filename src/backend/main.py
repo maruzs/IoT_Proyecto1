@@ -17,6 +17,10 @@ app = FastAPI(title="IoT Access Control")
 
 mode = os.environ.get("MODE", "DEV_LOCAL")
 
+# Global lock to prevent overlapping captures
+_capture_lock = asyncio.Lock()
+_capturing = False
+
 
 @app.on_event("startup")
 async def startup():
@@ -44,8 +48,9 @@ async def startup():
     app.state.mqtt = mqtt_client
     app.state.mode = mode
 
-    # 5. Start background burst-processing loop
-    asyncio.create_task(_processing_loop())
+    # Register capture state
+    app.state.capturing = False
+    app.state.capture_lock = _capture_lock
 
 
 @app.on_event("shutdown")
@@ -64,44 +69,48 @@ async def shutdown():
 app.include_router(routes.router)
 
 
-async def _processing_loop():
-    """Background loop: read frames, collect 5-second bursts, process faces."""
-    io = app.state.io
-    processor = app.state.processor
+async def run_capture(request, duration: float = 10.0):
+    """Run a capture session: collect frames for `duration` seconds,
+    process the burst, and emit the result via CommandOutput."""
+    io = request.app.state.io
+    processor = request.app.state.processor
     video_source, command_output = io
 
+    app.state.capturing = True
     frames_buffer = []
-    burst_start = None
-    BURST_DURATION = 5.0
+    deadline = asyncio.get_event_loop().time() + duration
 
-    while True:
-        frame = await asyncio.to_thread(video_source.read_frame)
-        if frame is not None:
-            frames_buffer.append(frame)
-            if burst_start is None:
-                burst_start = asyncio.get_event_loop().time()
+    try:
+        while asyncio.get_event_loop().time() < deadline:
+            frame = await asyncio.to_thread(video_source.read_frame)
+            if frame is not None:
+                frames_buffer.append(frame)
+            await asyncio.sleep(0.033)  # ~30 FPS
 
-            elapsed = asyncio.get_event_loop().time() - burst_start
-            if elapsed >= BURST_DURATION:
-                try:
-                    result = await asyncio.to_thread(processor.process_burst, frames_buffer)
-                    if result["estado"] == "permitido":
-                        await asyncio.to_thread(
-                            command_output.notify_access,
-                            result["usuario"],
-                            result.get("usuario_id"),
-                        )
-                        await asyncio.to_thread(command_output.door_open, 3)
-                    else:
-                        await asyncio.to_thread(
-                            command_output.notify_unknown, result.get("frame")
-                        )
-                except Exception:
-                    logger.exception("Burst processing failed")
-                frames_buffer = []
-                burst_start = None
+        if not frames_buffer:
+            return {"estado": "sin_frames", "mensaje": "No se recibieron frames de la cámara"}
 
-        await asyncio.sleep(0.033)  # ~30 FPS cap
+        result = await asyncio.to_thread(processor.process_burst, frames_buffer)
+
+        if result["estado"] == "permitido":
+            await asyncio.to_thread(
+                command_output.notify_access,
+                result["usuario"],
+                result.get("usuario_id"),
+            )
+            await asyncio.to_thread(command_output.door_open, 3)
+        else:
+            await asyncio.to_thread(
+                command_output.notify_unknown, result.get("frame")
+            )
+
+        return {"estado": result["estado"], "usuario": result.get("usuario")}
+
+    except Exception:
+        logger.exception("Capture session failed")
+        return {"estado": "error", "mensaje": "Error interno durante la captura"}
+    finally:
+        app.state.capturing = False
 
 
 if __name__ == "__main__":

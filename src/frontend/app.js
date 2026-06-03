@@ -138,7 +138,26 @@ async function handleEnrollSubmit() {
     }
 }
 
-async function handleOpenDoor() {
+async function handleCapture() {
+    const btn = document.getElementById('btn-capture');
+    btn.disabled = true;
+    btn.textContent = 'Capturando...';
+
+    const result = await apiPost('/api/capturar', {});
+    btn.disabled = false;
+    btn.textContent = 'Ver Imagen';
+
+    if (!result) {
+        alert('Error al capturar');
+        return;
+    }
+
+    // Refresh the camera feed
+    handleRefreshImage();
+
+    // Update detection card immediately
+    updateDetectionCard();
+}
     const result = await apiPost('/api/abrir-puerta', {});
     if (result && result.status === 'ok') {
         alert('Puerta abierta');
@@ -178,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(updateDetectionCard, POLL_EVENT);
     setInterval(updateAccessLog, POLL_LOG);
     document.getElementById('btn-open-door').onclick = handleOpenDoor;
-    document.getElementById('btn-refresh').onclick = handleRefreshImage;
+    document.getElementById('btn-capture').onclick = handleCapture;
     document.getElementById('enrollment-submit').onclick = handleEnrollSubmit;
 
     // Initial load
