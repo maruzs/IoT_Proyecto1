@@ -74,12 +74,17 @@ def _placeholder_frame():
     return frame
 
 
-async def _mjpeg_generator(video_source):
-    """Yield MJPEG chunks from a VideoSource."""
+async def _mjpeg_generator(video_source, get_capturing):
+    """Yield MJPEG chunks. Only reads camera while capturing."""
     while True:
-        frame = video_source.read_frame()
-        if frame is None:
+        if get_capturing():
+            frame = video_source.read_frame()
+            if frame is None:
+                frame = _placeholder_frame()
+        else:
             frame = _placeholder_frame()
+            await asyncio.sleep(0.5)  # slow refresh when idle
+
         ret, jpeg = cv2.imencode(".jpg", frame)
         if ret:
             yield (
@@ -88,19 +93,26 @@ async def _mjpeg_generator(video_source):
                 + jpeg.tobytes()
                 + b"\r\n"
             )
-        await asyncio.sleep(0.05)
+        if not get_capturing():
+            await asyncio.sleep(0.5)
+        else:
+            await asyncio.sleep(0.05)
 
 
 @router.get("/stream")
 async def stream(request: Request):
     """MJPEG stream relay.
 
-    DEV_LOCAL: reads from webcam.
-    PROD_MQTT: placeholder until ESP32-CAM URL arrives via MQTT.
+    Only reads camera during active capture sessions.
+    Otherwise serves placeholder.
     """
     video_source = request.app.state.io[0]
+
+    def get_capturing():
+        return getattr(request.app.state, "capturing", False)
+
     return StreamingResponse(
-        _mjpeg_generator(video_source),
+        _mjpeg_generator(video_source, get_capturing),
         media_type="multipart/x-mixed-replace; boundary=frame",
     )
 
