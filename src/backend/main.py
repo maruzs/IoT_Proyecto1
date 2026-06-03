@@ -83,16 +83,19 @@ async def _processing_loop():
 
             elapsed = asyncio.get_event_loop().time() - burst_start
             if elapsed >= BURST_DURATION:
-                result = await asyncio.to_thread(processor.process_burst, frames_buffer)
-                if result["estado"] == "permitido":
-                    await asyncio.to_thread(
-                        command_output.notify_access, result["usuario"]
-                    )
-                    await asyncio.to_thread(command_output.door_open, 3)
-                else:
-                    await asyncio.to_thread(
-                        command_output.notify_unknown, result.get("frame")
-                    )
+                try:
+                    result = await asyncio.to_thread(processor.process_burst, frames_buffer)
+                    if result["estado"] == "permitido":
+                        await asyncio.to_thread(
+                            command_output.notify_access, result["usuario"]
+                        )
+                        await asyncio.to_thread(command_output.door_open, 3)
+                    else:
+                        await asyncio.to_thread(
+                            command_output.notify_unknown, result.get("frame")
+                        )
+                except Exception:
+                    logger.exception("Burst processing failed")
                 frames_buffer = []
                 burst_start = None
 

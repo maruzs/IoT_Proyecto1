@@ -12,9 +12,10 @@ class LocalCommandOutput(CommandOutput):
     def door_open(self, duration: int = 3) -> None:
         print(f"PUERTA ABIERTA por {duration}s")
 
-    def notify_unknown(self, frame: np.ndarray) -> None:
+    def notify_unknown(self, frame: np.ndarray | None) -> None:
         global _cached_unknown_frame
-        _cached_unknown_frame = frame.copy()
+        if frame is not None:
+            _cached_unknown_frame = frame.copy()
         print("DESCONOCIDO DETECTADO")
         insert_event("Desconocido Detectado")
 
