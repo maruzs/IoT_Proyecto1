@@ -53,19 +53,32 @@ async def abrir_puerta(request: Request) -> JSONResponse:
     return JSONResponse(content={"status": "ok"})
 
 
+def _placeholder_frame():
+    """Return a 'Sin señal' placeholder frame."""
+    import numpy as np
+    frame = np.zeros((480, 640, 3), dtype=np.uint8)
+    frame[:] = (30, 30, 30)  # dark grey
+    cv2.putText(frame, "Sin senal de camara", (100, 240),
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (200, 200, 200), 2)
+    cv2.putText(frame, "Esperando ESP32-CAM...", (120, 280),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (150, 150, 150), 1)
+    return frame
+
+
 async def _mjpeg_generator(video_source):
     """Yield MJPEG chunks from a VideoSource."""
     while True:
         frame = video_source.read_frame()
-        if frame is not None:
-            ret, jpeg = cv2.imencode(".jpg", frame)
-            if ret:
-                yield (
-                    b"--frame\r\n"
-                    b"Content-Type: image/jpeg\r\n\r\n"
-                    + jpeg.tobytes()
-                    + b"\r\n"
-                )
+        if frame is None:
+            frame = _placeholder_frame()
+        ret, jpeg = cv2.imencode(".jpg", frame)
+        if ret:
+            yield (
+                b"--frame\r\n"
+                b"Content-Type: image/jpeg\r\n\r\n"
+                + jpeg.tobytes()
+                + b"\r\n"
+            )
         await asyncio.sleep(0.05)
 
 
@@ -73,14 +86,11 @@ async def _mjpeg_generator(video_source):
 async def stream(request: Request):
     """MJPEG stream relay.
 
-    In DEV_LOCAL: reads from LocalVideoSource, returns MJPEG StreamingResponse.
-    In PROD_MQTT: placeholder until streaming is wired in a later PR.
+    DEV_LOCAL: reads from webcam.
+    PROD_MQTT: placeholder until ESP32-CAM URL arrives via MQTT.
     """
-    mode = os.environ.get("MODE", "DEV_LOCAL")
-    if mode == "DEV_LOCAL":
-        video_source = request.app.state.io[0]
-        return StreamingResponse(
-            _mjpeg_generator(video_source),
-            media_type="multipart/x-mixed-replace; boundary=frame",
-        )
-    return JSONResponse({"status": "stream via proxy, use MJPEG endpoint"})
+    video_source = request.app.state.io[0]
+    return StreamingResponse(
+        _mjpeg_generator(video_source),
+        media_type="multipart/x-mixed-replace; boundary=frame",
+    )
