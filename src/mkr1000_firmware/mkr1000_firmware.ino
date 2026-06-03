@@ -1,11 +1,15 @@
 #include "src/config.h"
 #include "src/secrets.h"
 #include "src/sensor_reader.h"
+<<<<<<< HEAD
 #include "src/mqtt_manager.h"
 #include "src/message_builder.h"
 #include "src/alert_system.h"
 #include <WiFi101.h>
 #include <Arduino.h> 
+=======
+#include "Arduino.h"
+>>>>>>> 788047d0e5f603fcc241bd9306032586a46c6b3a
 
 WiFiClient wifiClient;
 unsigned long lastPublishTime = 0;
