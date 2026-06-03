@@ -33,7 +33,12 @@ class LocalVideoSource(VideoSource):
         if self._cap is not None and self._cap.isOpened():
             return True
 
-        future = self._executor.submit(self._open_camera)
+        try:
+            future = self._executor.submit(self._open_camera)
+        except RuntimeError:
+            # Executor was shut down, recreate it
+            self._executor = ThreadPoolExecutor(max_workers=1)
+            future = self._executor.submit(self._open_camera)
         try:
             self._cap = future.result(timeout=self._OPEN_TIMEOUT)
         except FuturesTimeoutError:
@@ -63,4 +68,3 @@ class LocalVideoSource(VideoSource):
         if self._cap is not None:
             self._cap.release()
             self._cap = None
-        self._executor.shutdown(wait=False)
