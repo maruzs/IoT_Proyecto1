@@ -24,6 +24,7 @@ class MQTTClient:
         self.equipo_id = os.environ.get("EQUIPO_ID", equipo_id)
         self.topic_base = f"smarthome/{self.equipo_id}"
         self._url_callback = None
+        self._frame_callback = None
 
         # paho-mqtt v1 / v2 compatibility
         try:
@@ -49,6 +50,10 @@ class MQTTClient:
         """Register callback invoked when ``camara/url`` arrives."""
         self._url_callback = callback
 
+    def set_frame_callback(self, callback) -> None:
+        """Register callback invoked when ``camara/imagen`` arrives."""
+        self._frame_callback = callback
+
     def publish(self, topic_suffix: str, payload: str | dict) -> None:
         """Publish to ``{topic_base}/{topic_suffix}`` with QoS 1.
 
@@ -71,7 +76,7 @@ class MQTTClient:
     def _on_connect(self, client, userdata, flags, rc):
         if rc == 0:
             logger.info("MQTT connected to %s:%s", self.broker_host, self.broker_port)
-            topic = f"{self.topic_base}/camara/url"
+            topic = f"{self.topic_base}/camara/imagen"
             client.subscribe(topic, qos=1)
             logger.info("Subscribed to %s", topic)
         else:
@@ -79,18 +84,21 @@ class MQTTClient:
 
     def _on_message(self, client, userdata, msg):
         topic = msg.topic
-        payload = msg.payload.decode("utf-8")
-        logger.debug("MQTT message on %s: %s", topic, payload)
+        logger.debug("MQTT message on %s (len=%s)", topic, len(msg.payload))
 
-        if topic == f"{self.topic_base}/camara/url":
+        if topic == f"{self.topic_base}/camara/imagen":
+            if self._frame_callback:
+                self._frame_callback(msg.payload)
+        elif topic == f"{self.topic_base}/camara/url":
             try:
+                payload = msg.payload.decode("utf-8")
                 data = json.loads(payload)
                 url = data.get("url")
                 if url and self._url_callback:
                     self._url_callback(url)
                     logger.info("Camera URL updated: %s", url)
-            except json.JSONDecodeError:
-                logger.warning("Invalid JSON on %s: %s", topic, payload)
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                logger.warning("Invalid payload on %s", topic)
 
     def _on_disconnect(self, client, userdata, rc):
         if rc == 0:

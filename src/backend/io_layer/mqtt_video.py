@@ -1,69 +1,44 @@
 import cv2
 import numpy as np
+import threading
 import time
 from .video_source import VideoSource
 
 
 class MQTTVideoSource(VideoSource):
-    """Video source that pulls frames from an HTTP MJPEG stream URL
-    received via MQTT (``set_url``).
+    """Video source that receives JPEG frames via MQTT (``set_frame``).
     """
 
     def __init__(self) -> None:
-        self._url: str | None = None
-        self._cap: cv2.VideoCapture | None = None
+        self._latest_frame: np.ndarray | None = None
+        self._frame_lock = threading.Lock()
         self._last_frame_time: float = 0.0
         self._frame_interval: float = 0.033  # ~30 fps target
-        self._url_set_time: float = 0.0
-        self._url_timeout: float = 10.0
 
-    def set_url(self, url: str) -> None:
-        """Update the stream URL and reset the capture."""
-        self._url = url
-        self._url_set_time = time.time()
-        if self._cap is not None:
-            self._cap.release()
-            self._cap = None
+    def set_frame(self, frame_bytes: bytes) -> None:
+        """Decode incoming JPEG bytes and store the latest frame."""
+        if not frame_bytes:
+            return
+        nparr = np.frombuffer(frame_bytes, np.uint8)
+        frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if frame is not None:
+            with self._frame_lock:
+                self._latest_frame = frame
 
     def read_frame(self) -> np.ndarray | None:
-        if self._url is None:
-            return None
-
         now = time.time()
-
-        # URL timeout: if 10s have passed since the URL was set, declare dead.
-        if now - self._url_set_time > self._url_timeout:
-            if self._cap is not None:
-                self._cap.release()
-                self._cap = None
-            return None
-
-        # Lazily open capture on first valid call after URL is set.
-        if self._cap is None:
-            self._cap = cv2.VideoCapture(self._url)
-            if not self._cap.isOpened():
-                self._cap = None
-                return None
-
-        # Framerate limiting: skip (grab without decode) until interval elapsed.
         if now - self._last_frame_time < self._frame_interval:
-            if not self._cap.grab():
-                self._cap.release()
-                self._cap = None
-                return None
             return None
 
-        ret, frame = self._cap.read()
-        if not ret:
-            self._cap.release()
-            self._cap = None
-            return None
+        with self._frame_lock:
+            frame = self._latest_frame
+            self._latest_frame = None
 
-        self._last_frame_time = now
+        if frame is not None:
+            self._last_frame_time = now
+
         return frame
 
     def release(self) -> None:
-        if self._cap is not None:
-            self._cap.release()
-            self._cap = None
-        self._url = None
+        with self._frame_lock:
+            self._latest_frame = None

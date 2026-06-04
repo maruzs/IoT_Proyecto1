@@ -44,7 +44,7 @@ services:
     group_add:
       - "983"  # video group
     environment:
-      - MODE=DEV_LOCAL
+      - MODE=PROD_MQTT
       - EQUIPO_ID=equipoXX
       - MQTT_BROKER=mosquitto
       - DB_PATH=/app/data/access_control.db

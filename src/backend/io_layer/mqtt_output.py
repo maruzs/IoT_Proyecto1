@@ -15,9 +15,9 @@ class MQTTCommandOutput(CommandOutput):
         self._publish = publish_func
 
     def door_open(self, duration: int = 3) -> None:
-        self._publish("control/led_puerta", json.dumps({"accion": "ON"}))
+        self._publish("control/led-puerta", json.dumps({"accion": "ON"}))
         time.sleep(duration)
-        self._publish("control/led_puerta", json.dumps({"accion": "OFF"}))
+        self._publish("control/led-puerta", json.dumps({"accion": "OFF"}))
 
     def notify_unknown(self, frame: np.ndarray | None) -> None:
         if frame is not None:
