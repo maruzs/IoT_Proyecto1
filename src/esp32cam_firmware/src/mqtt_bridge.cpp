@@ -5,6 +5,8 @@
  * Publica eventos en TOPIC_CAMARA_EVENTO y suscribe a TOPIC_CAMARA_CONTROL.
  */
 
+#define MQTT_MAX_PACKET_SIZE 32768
+
 #include "mqtt_bridge.h"
 #include "config.h"
 
@@ -36,6 +38,11 @@ bool publishCameraEvent(const char* event) {
 bool publishToTopic(const char* topic, const char* payload) {
     if (!cameraClient.connected()) return false;
     return cameraClient.publish(topic, payload);
+}
+
+bool publishCameraImage(const uint8_t* data, size_t len) {
+    if (!cameraClient.connected()) return false;
+    return cameraClient.publish(TOPIC_CAMARA_IMAGEN, data, len);
 }
 
 void subscribeToCameraControl(void (*callback)(char*, byte*, unsigned int)) {

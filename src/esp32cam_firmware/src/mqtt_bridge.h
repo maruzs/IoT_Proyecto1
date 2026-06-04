@@ -16,6 +16,7 @@ bool ensureCameraMQTTConnected();
 bool isCameraMQTTConnected();
 bool publishCameraEvent(const char* event);
 bool publishToTopic(const char* topic, const char* payload);
+bool publishCameraImage(const uint8_t* data, size_t len);
 void subscribeToCameraControl(void (*callback)(char*, byte*, unsigned int));
 void mqttLoop();
 

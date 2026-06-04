@@ -65,6 +65,7 @@
 #define TOPIC_CAMARA_CONTROL TOPIC_BASE "/camara/control"
 #define TOPIC_CAMARA_CAPTURA TOPIC_BASE "/camara/captura"
 #define TOPIC_CAMARA_URL     TOPIC_BASE "/camara/url"
+#define TOPIC_CAMARA_IMAGEN  TOPIC_BASE "/camara/imagen"
 
 // ---------------------------------------------------------------------------
 // Burst Capture

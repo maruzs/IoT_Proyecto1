@@ -31,6 +31,7 @@ void setup() {
     Serial.print("Camara lista! Mira el stream en: http://");
     Serial.println(WiFi.localIP());
     if (!initCamera()) { Serial.println("Camara fallo"); return; }
+    startCameraServer();
     initCameraMQTT(wifiClient, MQTT_SERVER);
     ensureCameraMQTTConnected();
     subscribeToCameraControl(mqttCallback);

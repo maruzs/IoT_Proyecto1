@@ -8,9 +8,8 @@
 
 #include "burst_capture.h"
 #include "config.h"
-#include "camera_server.h"
 #include "mqtt_bridge.h"
-#include <WiFi.h>
+#include <esp_camera.h>
 #include <Arduino.h>
 
 enum BurstState {
@@ -24,14 +23,14 @@ static unsigned long burstStartMs = 0;
 void handleBurstCommand(const char* payload) {
     if (strstr(payload, "iniciar_burst") != NULL) {
         if (burstState == STATE_IDLE) {
-            startCameraServer();
-            IPAddress ip = WiFi.localIP();
-            char url[64];
-            snprintf(url, sizeof(url), "http://%d.%d.%d.%d/",
-                     ip[0], ip[1], ip[2], ip[3]);
-            publishToTopic(TOPIC_CAMARA_URL, url);
             burstState = STATE_BURSTING;
             burstStartMs = millis();
+
+            camera_fb_t* fb = esp_camera_fb_get();
+            if (fb) {
+                publishCameraImage(fb->buf, fb->len);
+                esp_camera_fb_return(fb);
+            }
         }
     }
 }
@@ -39,7 +38,6 @@ void handleBurstCommand(const char* payload) {
 void checkBurstTimeout() {
     if (burstState == STATE_BURSTING) {
         if (millis() - burstStartMs >= BURST_DURATION_S * 1000UL) {
-            stopCameraServer();
             publishToTopic(TOPIC_CAMARA_EVENTO, "{\"estado\":\"burst_complete\"}");
             burstState = STATE_IDLE;
         }
