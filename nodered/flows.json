@@ -44,7 +44,6 @@
         "socksusername": "",
         "sockspassword": "",
         "bothotsp": "",
-        "botkey": "8845478827:AAF-VIRWIy5rhSP1f8kcBNmZYypsXF47x6s",
         "verbose": false
     },
     {
@@ -115,7 +114,8 @@
             [
                 "parse_sensor_data",
                 "csv_logging_trigger",
-                "rules_evaluator"
+                "rules_evaluator",
+                "sound_trigger"
             ]
         ]
     },
@@ -379,7 +379,7 @@
         "y": 520,
         "wires": [
             [
-                "mqtt_out_camara_control"
+                "mqtt_out_camara_captura"
             ]
         ]
     },
@@ -420,11 +420,30 @@
         "wires": []
     },
     {
-        "id": "mqtt_out_camara_control",
+        "id": "sound_trigger",
+        "type": "function",
+        "z": "f6f2187d.f17ca8",
+        "name": "Trigger Sonido → Cámara",
+        "func": "var threshold = context.get('sound_threshold') || 80;\nvar sound = msg.payload.sensor_extra;\nif (sound !== undefined && sound > threshold) {\n    return {\n        payload: {\"accion\":\"iniciar_burst\",\"duracion\":5},\n        topic: \"smarthome/equipoXX/camara/captura\"\n    };\n}\nreturn null;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "context.set('sound_threshold', 80);",
+        "finalize": "",
+        "libs": [],
+        "x": 390,
+        "y": 500,
+        "wires": [
+            [
+                "mqtt_out_camara_captura"
+            ]
+        ]
+    },
+    {
+        "id": "mqtt_out_camara_captura",
         "type": "mqtt out",
         "z": "f6f2187d.f17ca8",
-        "name": "Publicar control Cámara",
-        "topic": "smarthome/equipoXX/camara/control",
+        "name": "Publicar camara/captura",
+        "topic": "smarthome/equipoXX/camara/captura",
         "qos": "0",
         "retain": "false",
         "respTopic": "",
