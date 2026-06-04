@@ -29,6 +29,9 @@ void subscribeToControlTopics();
 /** Procesa el loop interno del cliente MQTT (keepalive + callbacks). */
 void mqttLoop();
 
+/** Verifica y apaga el LED de puerta si pasaron 2 segundos desde su activación. */
+void checkDoorLedTimeout();
+
 /** Callback de mensajes MQTT entrantes; activa/desactiva actuadores. */
 void mqttCallback(char* topic, byte* payload, unsigned int length);
 

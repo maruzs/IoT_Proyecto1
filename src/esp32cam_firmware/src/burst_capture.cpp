@@ -28,8 +28,15 @@ void handleBurstCommand(const char* payload) {
 
             camera_fb_t* fb = esp_camera_fb_get();
             if (fb) {
-                publishCameraImage(fb->buf, fb->len);
+                Serial.print("Imagen capturada: "); Serial.print(fb->len); Serial.println(" bytes");
+                if (publishCameraImage(fb->buf, fb->len)) {
+                    Serial.println("Imagen publicada OK");
+                } else {
+                    Serial.println("FALLO al publicar imagen");
+                }
                 esp_camera_fb_return(fb);
+            } else {
+                Serial.println("FALLO: esp_camera_fb_get() devolvió NULL");
             }
         }
     }

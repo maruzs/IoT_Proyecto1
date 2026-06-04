@@ -21,7 +21,6 @@ services:
       - "1880:1880"
     volumes:
       - ./nodered/data:/data
-      - ./nodered/data/flows.json:/data/flows.json
     depends_on:
       mosquitto:
         condition: service_healthy
@@ -45,7 +44,7 @@ services:
       - "983"  # video group
     environment:
       - MODE=PROD_MQTT
-      - EQUIPO_ID=equipoXX
+      - EQUIPO_ID=equipo69
       - MQTT_BROKER=mosquitto
       - DB_PATH=/app/data/access_control.db
       - DISPLAY=${DISPLAY}

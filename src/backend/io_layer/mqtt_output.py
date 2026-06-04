@@ -1,5 +1,4 @@
 import json
-import time
 from typing import Callable
 import numpy as np
 from ..database.db import insert_event
@@ -16,8 +15,6 @@ class MQTTCommandOutput(CommandOutput):
 
     def door_open(self, duration: int = 3) -> None:
         self._publish("control/led-puerta", json.dumps({"accion": "ON"}))
-        time.sleep(duration)
-        self._publish("control/led-puerta", json.dumps({"accion": "OFF"}))
 
     def notify_unknown(self, frame: np.ndarray | None) -> None:
         if frame is not None:

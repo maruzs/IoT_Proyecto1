@@ -5,6 +5,8 @@
 #include <Arduino.h>
 
 static PubSubClient mqttClient;
+static unsigned long doorLedOnTime = 0;
+static bool doorLedTimed = false;
 
 static void setActuatorState(int pin, bool state) {
     digitalWrite(pin, state ? HIGH : LOW);
@@ -65,9 +67,22 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
         if (!error) {
             const char* accion = doc["accion"];
             if (accion) {
-                bool doorState = (strcmp(accion, "ON") == 0 || strcmp(accion, "on") == 0);
-                setActuatorState(PIN_LED_PUERTA, doorState);
+                if (strcmp(accion, "ON") == 0 || strcmp(accion, "on") == 0) {
+                    setActuatorState(PIN_LED_PUERTA, true);
+                    doorLedOnTime = millis();
+                    doorLedTimed = true;
+                } else {
+                    setActuatorState(PIN_LED_PUERTA, false);
+                    doorLedTimed = false;
+                }
             }
         }
+    }
+}
+
+void checkDoorLedTimeout() {
+    if (doorLedTimed && (millis() - doorLedOnTime >= 3000)) {
+        setActuatorState(PIN_LED_PUERTA, false);
+        doorLedTimed = false;
     }
 }

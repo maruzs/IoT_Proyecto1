@@ -75,15 +75,14 @@ def _placeholder_frame():
 
 
 async def _mjpeg_generator(video_source, get_capturing):
-    """Yield MJPEG chunks. Only reads camera while capturing."""
+    """Yield MJPEG chunks. Shows latest frame when available, placeholder otherwise."""
     while True:
-        if get_capturing():
-            frame = video_source.read_frame()
-            if frame is None:
-                frame = _placeholder_frame()
-        else:
+        frame = video_source.read_frame()
+        if frame is None:
             frame = _placeholder_frame()
-            await asyncio.sleep(0.5)  # slow refresh when idle
+            await asyncio.sleep(0.5)  # slow refresh when no frame
+        else:
+            await asyncio.sleep(0.1)  # fast refresh when frame available
 
         ret, jpeg = cv2.imencode(".jpg", frame)
         if ret:
@@ -93,10 +92,6 @@ async def _mjpeg_generator(video_source, get_capturing):
                 + jpeg.tobytes()
                 + b"\r\n"
             )
-        if not get_capturing():
-            await asyncio.sleep(0.5)
-        else:
-            await asyncio.sleep(0.05)
 
 
 @router.get("/stream")

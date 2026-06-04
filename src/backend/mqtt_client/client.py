@@ -17,7 +17,7 @@ class MQTTClient:
         self,
         broker_host: str = "mosquitto",
         broker_port: int = 1883,
-        equipo_id: str = "equipoXX",
+        equipo_id: str = "equipo69",
     ) -> None:
         self.broker_host = os.environ.get("MQTT_BROKER", broker_host)
         self.broker_port = broker_port

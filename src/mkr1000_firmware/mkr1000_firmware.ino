@@ -20,6 +20,7 @@ void setup() {
 void loop() {
   if (!ensureConnected()) { delay(1000); return; }
   mqttLoop();
+  checkDoorLedTimeout();
   if (millis() - lastPublishTime >= PUBLISH_INTERVAL_MS) {
     lastPublishTime = millis();
     SensorData data = readAllSensors();

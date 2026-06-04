@@ -8,6 +8,12 @@
 #ifndef MQTT_BRIDGE_H
 #define MQTT_BRIDGE_H
 
+// DEBE definirse antes de incluir PubSubClient
+// uint16_t bufferSize: max 65535. Usamos 60000 (suficiente para JPEGs de ~30KB)
+#ifndef MQTT_MAX_PACKET_SIZE
+#define MQTT_MAX_PACKET_SIZE 60000
+#endif
+
 #include <WiFi.h>
 #include <PubSubClient.h>
 

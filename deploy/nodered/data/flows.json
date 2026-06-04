@@ -36,6 +36,7 @@
         "usernames": "",
         "chatids": "",
         "baseapiurl": "",
+        "testenvironment": false,
         "updatemode": "polling",
         "pollinterval": "1",
         "usesocks": false,
@@ -43,8 +44,16 @@
         "socksport": "",
         "socksusername": "",
         "sockspassword": "",
-        "bothotsp": "",
-        "verbose": false
+        "bothost": "",
+        "botpath": "",
+        "localbothost": "",
+        "localbotport": "",
+        "publicbotport": "",
+        "privatekey": "",
+        "certificate": "",
+        "useselfsignedcertificate": false,
+        "sslterminated": false,
+        "verboselogging": false
     },
     {
         "id": "ui_tab_main",
@@ -94,6 +103,102 @@
         "disp": true,
         "width": "6",
         "collapse": false
+    },
+    {
+        "id": "96bd3462926bd100",
+        "type": "ui_base",
+        "theme": {
+            "name": "theme-light",
+            "lightTheme": {
+                "default": "#0094CE",
+                "baseColor": "#0094CE",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
+                "edited": false
+            },
+            "darkTheme": {
+                "default": "#097479",
+                "baseColor": "#097479",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
+                "edited": false
+            },
+            "customTheme": {
+                "name": "Untitled Theme 1",
+                "default": "#4B7930",
+                "baseColor": "#4B7930",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif"
+            },
+            "themeState": {
+                "base-color": {
+                    "default": "#0094CE",
+                    "value": "#0094CE",
+                    "edited": false
+                },
+                "page-titlebar-backgroundColor": {
+                    "value": "#0094CE",
+                    "edited": false
+                },
+                "page-backgroundColor": {
+                    "value": "#fafafa",
+                    "edited": false
+                },
+                "page-sidebar-backgroundColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "group-textColor": {
+                    "value": "#1bbfff",
+                    "edited": false
+                },
+                "group-borderColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "group-backgroundColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "widget-textColor": {
+                    "value": "#111111",
+                    "edited": false
+                },
+                "widget-backgroundColor": {
+                    "value": "#0094ce",
+                    "edited": false
+                },
+                "widget-borderColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "base-font": {
+                    "value": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif"
+                }
+            },
+            "angularTheme": {
+                "primary": "indigo",
+                "accents": "blue",
+                "warn": "red",
+                "background": "grey",
+                "palette": "light"
+            }
+        },
+        "site": {
+            "name": "Node-RED Dashboard",
+            "hideToolbar": "false",
+            "allowSwipe": "false",
+            "lockMenu": "false",
+            "allowTempTheme": "true",
+            "dateFormat": "DD/MM/YYYY",
+            "sizes": {
+                "sx": 48,
+                "sy": 48,
+                "gx": 6,
+                "gy": 6,
+                "cx": 6,
+                "cy": 6,
+                "px": 0,
+                "py": 0
+            }
+        }
     },
     {
         "id": "mqtt_in_datos",
@@ -388,12 +493,11 @@
         "type": "mqtt out",
         "z": "f6f2187d.f17ca8",
         "name": "Publicar control LED",
-        "topic": "smarthome/equipoXX/control/led",
+        "topic": "smarthome/equipo69/control/led",
         "qos": "0",
         "retain": "false",
         "respTopic": "",
         "contentType": "",
-        "userProperties": "",
         "correl": "",
         "expiry": "",
         "broker": "mqtt_broker_config",
@@ -406,12 +510,11 @@
         "type": "mqtt out",
         "z": "f6f2187d.f17ca8",
         "name": "Publicar control Buzzer",
-        "topic": "smarthome/equipoXX/control/buzzer",
+        "topic": "smarthome/equipo69/control/buzzer",
         "qos": "0",
         "retain": "false",
         "respTopic": "",
         "contentType": "",
-        "userProperties": "",
         "correl": "",
         "expiry": "",
         "broker": "mqtt_broker_config",
@@ -424,14 +527,15 @@
         "type": "function",
         "z": "f6f2187d.f17ca8",
         "name": "Trigger Sonido → Cámara",
-        "func": "var threshold = context.get('sound_threshold') || 80;\nvar sound = msg.payload.sensor_extra;\nif (sound !== undefined && sound > threshold) {\n    return {\n        payload: {\"accion\":\"iniciar_burst\",\"duracion\":5},\n        topic: \"smarthome/equipoXX/camara/captura\"\n    };\n}\nreturn null;",
+        "func": "var threshold = context.get('sound_threshold') || 600;\nvar sound = msg.payload.sensor_extra;\nif (sound !== undefined && sound > threshold) {\n    return {\n        payload: {\"accion\":\"iniciar_burst\",\"duracion\":5},\n        topic: \"smarthome/equipo69/camara/captura\"\n    };\n}\nreturn null;",
         "outputs": 1,
+        "timeout": "",
         "noerr": 0,
-        "initialize": "context.set('sound_threshold', 80);",
+        "initialize": "context.set('sound_threshold', 600);",
         "finalize": "",
         "libs": [],
-        "x": 390,
-        "y": 500,
+        "x": 190,
+        "y": 320,
         "wires": [
             [
                 "mqtt_out_camara_captura"
@@ -443,12 +547,11 @@
         "type": "mqtt out",
         "z": "f6f2187d.f17ca8",
         "name": "Publicar camara/captura",
-        "topic": "smarthome/equipoXX/camara/captura",
+        "topic": "smarthome/equipo69/camara/captura",
         "qos": "0",
         "retain": "false",
         "respTopic": "",
         "contentType": "",
-        "userProperties": "",
         "correl": "",
         "expiry": "",
         "broker": "mqtt_broker_config",
@@ -461,7 +564,7 @@
         "type": "mqtt in",
         "z": "f6f2187d.f17ca8",
         "name": "Presencia y Rostros",
-        "topic": "smarthome/equipoXX/camara/evento",
+        "topic": "smarthome/equipo69/camara/evento",
         "qos": "0",
         "datatype": "json",
         "broker": "mqtt_broker_config",
@@ -524,15 +627,13 @@
         "type": "ui_template",
         "z": "f6f2187d.f17ca8",
         "group": "ui_group_security",
+        "name": "Indicador Visual",
         "order": 2,
         "width": 3,
         "height": 1,
-        "name": "Indicador Visual",
         "format": "<div style=\"display: flex; align-items: center; justify-content: flex-end; height: 100%; padding-right: 10px;\">\n    <div style=\"width: 15px; height: 15px; border-radius: 50%; background-color: {{msg.payload || '#33cc33'}}; box-shadow: 0 0 8px {{msg.payload || '#33cc33'}};\"></div>\n    <span style=\"margin-left: 8px; font-weight: bold; font-size: 13px;\">Estado</span>\n</div>",
         "storeOutMessages": true,
         "fwdInMessages": true,
-        "resendOnClientConnect": true,
-        "layout": "row-spread",
         "className": "",
         "x": 640,
         "y": 660,
@@ -562,20 +663,58 @@
         "type": "ui_template",
         "z": "f6f2187d.f17ca8",
         "group": "ui_group_security",
+        "name": "Cámara (última captura)",
         "order": 4,
         "width": 6,
-        "height": 4,
-        "name": "Stream ESP32-CAM",
-        "format": "<div style=\"text-align: center; overflow: hidden; height: 100%; display: flex; flex-direction: column; justify-content: center;\">\n    <img src=\"http://192.168.1.100/\" style=\"width: 100%; height: auto; border: 2px solid #ccc; border-radius: 6px; object-fit: contain;\" onerror=\"this.src='https://placehold.co/320x240?text=Camara+Sin+Conexion'\" />\n</div>",
+        "height": 6,
+        "format": "<div style=\"text-align:center; height:100%; display:flex; flex-direction:column; justify-content:center; background:#1a1a1a; border-radius:6px; min-height:240px;\">\n    <div ng-if=\"!msg || !msg.payload\" style=\"color:#888; font-size:14px;\">Esperando captura...</div>\n    <div ng-bind-html=\"msg.payload\" style=\"width:100%;\"></div>\n</div>",
         "storeOutMessages": true,
         "fwdInMessages": true,
-        "resendOnClientConnect": true,
-        "layout": "row-spread",
         "className": "",
-        "x": 660,
-        "y": 720,
+        "x": 930,
+        "y": 640,
         "wires": [
             []
+        ]
+    },
+    {
+        "id": "b64_conv.001abc",
+        "type": "function",
+        "z": "f6f2187d.f17ca8",
+        "name": "JPEG a Base64",
+        "func": "if (msg.payload && msg.payload.length > 0) {\n    var base64 = msg.payload.toString('base64');\n    msg.payload = '<img src=\"data:image/jpeg;base64,' + base64 + '\" style=\"width:100%; height:auto; border:2px solid #444; border-radius:4px; object-fit:contain;\" />';\n} else {\n    msg.payload = '<div style=\"color:#888;\">Imagen vacía</div>';\n}\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 900,
+        "y": 480,
+        "wires": [
+            [
+                "ui_camera_feed"
+            ]
+        ]
+    },
+    {
+        "id": "img_in_001.abc",
+        "type": "mqtt in",
+        "z": "f6f2187d.f17ca8",
+        "name": "Imagen Cámara",
+        "topic": "smarthome/equipo69/camara/imagen",
+        "qos": "0",
+        "datatype": "buffer",
+        "broker": "mqtt_broker_config",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 880,
+        "y": 380,
+        "wires": [
+            [
+                "b64_conv.001abc"
+            ]
         ]
     },
     {
@@ -619,10 +758,11 @@
         "type": "function",
         "z": "f6f2187d.f17ca8",
         "name": "Reglas de Control Automático",
-        "func": "var temp = msg.payload.temperatura;\nvar gas = msg.payload.gas;\nvar alertTriggered = false;\nvar alertMsg = \"\";\n\nif (temp && temp > 30) {\n    alertTriggered = true;\n    alertMsg += \"⚠️ ¡Temperatura crítica: \" + temp + \"°C!\\n\";\n}\n\nif (gas && gas > 1020) {\n    alertTriggered = true;\n    alertMsg += \"🔥 ¡Alerta de Gas detectada: \" + gas + \" ppm!\\n\";\n}\n\nif (alertTriggered) {\n    var telegramMsg = {\n        payload: {\n            chatId: -1003906928304,\n            type: \"message\",\n            content: \"🚨 *[SmartHome ALERTA]*\\n\\n\" + alertMsg + \"\\n*Timestamp:* \" + new Date().toLocaleString()\n        }\n    };\n    \n    return [\n        { payload: \"ON\", topic: \"control/led\" },\n        { payload: \"ON\", topic: \"control/buzzer\" },\n        telegramMsg\n    ];\n} else {\n    return [\n        null,\n        null,\n        null\n    ];\n}",
+        "func": "var temp = msg.payload.temperatura;\nvar gas = msg.payload.gas;\nvar gasThreshold = context.get('gas_threshold') || 1020;\nvar alertTriggered = false;\nvar alertMsg = \"\";\n\nif (temp && temp > 30) {\n    alertTriggered = true;\n    alertMsg += \"⚠️ ¡Temperatura crítica: \" + temp + \"°C!\\n\";\n}\n\nif (gas && gas > gasThreshold) {\n    alertTriggered = true;\n    alertMsg += \"🔥 ¡Alerta de Gas detectada: \" + gas + \" ppm!\\n\";\n}\n\nif (alertTriggered) {\n    var telegramMsg = {\n        payload: {\n            chatId: -1003906928304,\n            type: \"message\",\n            content: \"🚨 *[SmartHome ALERTA]*\\n\\n\" + alertMsg + \"\\n*Timestamp:* \" + new Date().toLocaleString()\n        }\n    };\n    \n    return [\n        { payload: \"ON\", topic: \"control/led\" },\n        { payload: \"ON\", topic: \"control/buzzer\" },\n        telegramMsg\n    ];\n} else {\n    return [\n        null,\n        null,\n        null\n    ];\n}",
         "outputs": 3,
+        "timeout": "",
         "noerr": 0,
-        "initialize": "",
+        "initialize": "context.set('gas_threshold', 1020);",
         "finalize": "",
         "libs": [],
         "x": 390,
@@ -647,6 +787,10 @@
         "bot": "telegram_bot_config",
         "saveDataDir": "",
         "filterCommands": false,
+        "hasinput": false,
+        "inputs": 0,
+        "handleallupdates": false,
+        "handleprocessupdates": false,
         "x": 140,
         "y": 740,
         "wires": [
@@ -685,7 +829,7 @@
         "bot": "telegram_bot_config",
         "haserroroutput": false,
         "outputs": 1,
-        "x": 660,
+        "x": 810,
         "y": 740,
         "wires": [
             []

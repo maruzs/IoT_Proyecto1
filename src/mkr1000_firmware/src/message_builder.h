@@ -16,8 +16,10 @@
  * @param data      Lecturas de sensores con flags de validez.
  * @param buffer    Buffer de salida (recomendado >= 256 bytes).
  * @param bufferSize Tamano del buffer.
- * @param alertMsg  Mensaje de alerta opcional; si es nullptr, no se incluye el campo.
+ * @param alertMsg  Mensaje de alerta opcional; si es nullptr, no se incluye el
+ * campo.
  */
-void buildSensorJSON(const SensorData& data, char* buffer, size_t bufferSize, const char* alertMsg = nullptr);
+void buildSensorJSON(const SensorData &data, char *buffer, size_t bufferSize,
+                     const char *alertMsg = nullptr);
 
 #endif

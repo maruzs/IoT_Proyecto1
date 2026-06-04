@@ -26,17 +26,11 @@ class MQTTVideoSource(VideoSource):
                 self._latest_frame = frame
 
     def read_frame(self) -> np.ndarray | None:
-        now = time.time()
-        if now - self._last_frame_time < self._frame_interval:
-            return None
-
+        """Return the latest frame without consuming it.
+        Multiple consumers can read the same frame.
+        """
         with self._frame_lock:
             frame = self._latest_frame
-            self._latest_frame = None
-
-        if frame is not None:
-            self._last_frame_time = now
-
         return frame
 
     def release(self) -> None:

@@ -20,7 +20,7 @@ Si quieres que las alertas y comandos funcionen en un grupo compartido con todos
 2. **Obtener el Chat ID del Grupo:**
    - Escribe un mensaje cualquiera en el grupo (ej. `/ayuda`).
    - Abre tu navegador web en la laptop y visita el siguiente enlace (reemplazando con tu API Token):
-     `https://api.telegram.org/bot8845478827:AAF-VIRWIy5rhSP1f8kcBNmZYypsXF47x6s/getUpdates`
+      `https://api.telegram.org/botTU_API_KEY_AQUI/getUpdates`
    - Busca en la respuesta de JSON una sección parecida a esta:
      `"chat":{"id":-100XXXXXXXXXX,"title":"NombreGrupo","type":"group"}`
    - El **ID del grupo** es un número negativo que suele empezar por `-100`. Cópialo completo (incluyendo el signo menos `-`).

@@ -34,7 +34,6 @@ async def startup():
         video_source, command_output = resolve_mode(
             publish_func=mqtt_client.publish,
         )
-        mqtt_client.set_url_callback(video_source.set_url)
         mqtt_client.set_frame_callback(video_source.set_frame)
         mqtt_client.connect()
     else:
@@ -78,6 +77,12 @@ async def run_capture(request, duration: float = 10.0):
     video_source, command_output = io
 
     app.state.capturing = True
+
+    # Trigger ESP32-CAM burst capture via MQTT (PROD_MQTT mode only)
+    mqtt_client = getattr(request.app.state, "mqtt", None)
+    if mqtt_client is not None:
+        mqtt_client.publish("camara/captura", {"accion": "iniciar_burst", "duracion": 5})
+
     SUB_BURST = 3.0  # process every 3 seconds
     frames_buffer = []
     last_result = {"estado": "sin_resultado"}

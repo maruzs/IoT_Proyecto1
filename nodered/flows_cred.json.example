@@ -1,5 +1,5 @@
 {
     "telegram_bot_config": {
-        "botkey": "TU_API_KEY_AQUI"
+        "token": "TU_API_KEY_AQUI"
     }
 }

@@ -1,3 +1,5 @@
+// MQTT_MAX_PACKET_SIZE debe definirse antes que cualquier include de PubSubClient
+#define MQTT_MAX_PACKET_SIZE 65536
 #include "src/config.h"
 #include "src/secrets.h"
 #include "src/camera_server.h"
@@ -28,14 +30,20 @@ void setup() {
         Serial.print(".");
     }
     Serial.println("\nWiFi OK");
-    Serial.print("Camara lista! Mira el stream en: http://");
+    Serial.print("Camara lista! IP: http://");
     Serial.println(WiFi.localIP());
     if (!initCamera()) { Serial.println("Camara fallo"); return; }
-    startCameraServer();
+    // Modo snapshot: sin stream MJPEG. Imágenes solo bajo demanda vía MQTT.
+    delay(500);  // Pequeña pausa post-WiFi para estabilizar
     initCameraMQTT(wifiClient, MQTT_SERVER);
-    ensureCameraMQTTConnected();
+    Serial.print("Conectando MQTT a "); Serial.print(MQTT_SERVER); Serial.print("... ");
+    if (ensureCameraMQTTConnected()) {
+        Serial.println("OK");
+    } else {
+        Serial.println("FALLO");
+    }
     subscribeToCameraControl(mqttCallback);
-    publishCameraEvent("stream_started");
+    publishCameraEvent("camara_lista");
 }
 
 void loop() {

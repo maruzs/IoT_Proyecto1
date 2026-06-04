@@ -5,8 +5,8 @@
  * Publica eventos en TOPIC_CAMARA_EVENTO y suscribe a TOPIC_CAMARA_CONTROL.
  */
 
-#define MQTT_MAX_PACKET_SIZE 32768
-
+// MQTT_MAX_PACKET_SIZE must be BEFORE ANY PubSubClient include
+#define MQTT_MAX_PACKET_SIZE 65536
 #include "mqtt_bridge.h"
 #include "config.h"
 
@@ -15,11 +15,16 @@ static PubSubClient cameraClient;
 void initCameraMQTT(WiFiClient& wifiClient, const char* server) {
     cameraClient.setClient(wifiClient);
     cameraClient.setServer(server, 1883);
+    cameraClient.setBufferSize(60000);  // Necesario para imágenes JPEG (~15-30 KB)
 }
 
 bool ensureCameraMQTTConnected() {
     if (!cameraClient.connected()) {
-        return cameraClient.connect(EQUIPO_ID);
+        if (!cameraClient.connect(EQUIPO_ID "-cam")) return false;
+        // Re-suscribir después de reconexión
+        cameraClient.subscribe(TOPIC_CAMARA_CONTROL);
+        cameraClient.subscribe(TOPIC_CAMARA_CAPTURA);
+        Serial.println("MQTT reconectado + resuscrito");
     }
     return true;
 }
@@ -41,8 +46,16 @@ bool publishToTopic(const char* topic, const char* payload) {
 }
 
 bool publishCameraImage(const uint8_t* data, size_t len) {
-    if (!cameraClient.connected()) return false;
-    return cameraClient.publish(TOPIC_CAMARA_IMAGEN, data, len);
+    if (!cameraClient.connected()) {
+        Serial.println("MQTT desconectado al publicar imagen");
+        return false;
+    }
+    if (!cameraClient.publish(TOPIC_CAMARA_IMAGEN, data, len)) {
+        Serial.print("publish() falló. Imagen: "); Serial.print(len);
+        Serial.print(" bytes. Buffer size: "); Serial.println(cameraClient.getBufferSize());
+        return false;
+    }
+    return true;
 }
 
 void subscribeToCameraControl(void (*callback)(char*, byte*, unsigned int)) {

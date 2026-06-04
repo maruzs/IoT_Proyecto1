@@ -46,8 +46,16 @@ SensorData readAllSensors() {
     data.gasDigital = digitalRead(PIN_GAS_DO);
     data.gasDigitalValid = true;
 
-    // MAX4466 (sonido) — analogRead siempre devuelve valor; se considera valido.
-    data.sound = analogRead(PIN_SONIDO);
+    // MAX4466 (sonido) — muestreo con deteccion de pico a pico
+    int soundMin = 1023;
+    int soundMax = 0;
+    unsigned long soundStart = millis();
+    while (millis() - soundStart < 50) {
+        int val = analogRead(PIN_SONIDO);
+        if (val < soundMin) soundMin = val;
+        if (val > soundMax) soundMax = val;
+    }
+    data.sound = soundMax - soundMin;
     data.soundValid = true;
 
     return data;
