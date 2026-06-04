@@ -30,3 +30,4 @@ deploy/mosquitto/log/
 
 # Planificación y notas del equipo
 planificacion/
+deploy/data/
