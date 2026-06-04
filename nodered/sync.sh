@@ -15,6 +15,11 @@ else
     exit 1
 fi
 
+# Copiar flows_cred.json si existe (contiene claves/tokens de Telegram)
+if [ -f "$DIR/flows_cred.json" ]; then
+    docker cp "$DIR/flows_cred.json" mynodered:/data/flows_cred.json
+    echo "✓ Archivo flows_cred.json (credenciales) copiado al contenedor."
+fi
 # 2. Hacer reload instantáneo a través de la API de Node-RED
 echo "Refrescando flujos en la API de Node-RED..."
 RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:1880/flows -H "Node-RED-Deployment-Type: reload" -H "Content-Type: application/json")
