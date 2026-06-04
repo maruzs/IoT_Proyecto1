@@ -1,10 +1,14 @@
 #include "mqtt_manager.h"
 #include "config.h"
-#include "alert_system.h"
 #include <ArduinoJson.h>
 #include <string.h>
+#include <Arduino.h>
 
 static PubSubClient mqttClient;
+
+static void setActuatorState(int pin, bool state) {
+    digitalWrite(pin, state ? HIGH : LOW);
+}
 
 void initMQTT(WiFiClient& wifiClient, const char* server) {
     mqttClient.setClient(wifiClient);

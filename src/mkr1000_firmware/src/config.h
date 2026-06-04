@@ -51,7 +51,7 @@
 // ---------------------------------------------------------------------------
 // Timing
 // ---------------------------------------------------------------------------
-#define PUBLISH_INTERVAL_MS 100  // Intervalo entre publicaciones MQTT
+#define PUBLISH_INTERVAL_MS 2000  // Intervalo entre publicaciones MQTT
 
 // ---------------------------------------------------------------------------
 // MQTT Topics (C preprocessor string-literal concatenation)
@@ -62,6 +62,6 @@
 #define TOPIC_CONTROL_LED          TOPIC_BASE "/control/led"
 #define TOPIC_CONTROL_BUZZER       TOPIC_BASE "/control/buzzer"
 #define TOPIC_ALERTA               TOPIC_BASE "/alerta"
-#define TOPIC_CONTROL_LED_PUERTA   TOPIC_BASE "/control/led_puerta"
+#define TOPIC_CONTROL_LED_PUERTA   TOPIC_BASE "/control/led-puerta"
 
 #endif // MKR1000_CONFIG_H
