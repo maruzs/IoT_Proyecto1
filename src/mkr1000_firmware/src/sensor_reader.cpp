@@ -20,7 +20,6 @@ void initActuators() {
     pinMode(PIN_LED, OUTPUT);
     pinMode(PIN_BUZZER, OUTPUT);
     pinMode(PIN_LED_PUERTA, OUTPUT);
-    pinMode(PIN_PRESENCIA, INPUT);
 }
 
 SensorData readAllSensors() {

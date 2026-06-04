@@ -33,16 +33,6 @@ bool publishAlert(const char* alertMsg) {
     return mqttClient.publish(TOPIC_ALERTA, alertMsg);
 }
 
-bool publishPresence(int estado) {
-    if (!mqttClient.connected()) return false;
-    StaticJsonDocument<64> doc;
-    doc["sensor"] = "HC-SR501";
-    doc["estado"] = estado;
-    char buffer[64];
-    serializeJson(doc, buffer);
-    return mqttClient.publish(TOPIC_PRESENCIA, buffer);
-}
-
 void subscribeToControlTopics() {
     mqttClient.subscribe(TOPIC_CONTROL_LED);
     mqttClient.subscribe(TOPIC_CONTROL_BUZZER);

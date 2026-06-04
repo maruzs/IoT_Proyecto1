@@ -41,9 +41,6 @@
 #define PIN_BUZZER    5    // Alert buzzer (digital output). Options: 0-25
 #define PIN_LED_PUERTA 8   // Door LED (digital output). Options: 0-25
 
-// --- Presence Sensor Pin ---
-#define PIN_PRESENCIA 7    // HC-SR501 digital output
-
 // ---------------------------------------------------------------------------
 // Alert Thresholds
 // ---------------------------------------------------------------------------
@@ -65,7 +62,6 @@
 #define TOPIC_CONTROL_LED          TOPIC_BASE "/control/led"
 #define TOPIC_CONTROL_BUZZER       TOPIC_BASE "/control/buzzer"
 #define TOPIC_ALERTA               TOPIC_BASE "/alerta"
-#define TOPIC_PRESENCIA            TOPIC_BASE "/presencia"
 #define TOPIC_CONTROL_LED_PUERTA   TOPIC_BASE "/control/led_puerta"
 
 #endif // MKR1000_CONFIG_H
