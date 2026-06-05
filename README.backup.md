@@ -26,35 +26,38 @@
 
 ## Diagrama de pines — MKR1000
 
-### Sensores
-
-| Componente | Pin Sensor | Pin MKR1000 | Tipo de Señal |
-| ---------- | ---------- | ----------- | ------------- |
-| MQ Sensor (Gas)   | VCC / GND / AO / DO | VCC / GND / **A0** / **A2** | AO: Analógica, DO: Digital |
-| MAX4466 (Sonido)  | VCC / GND / OUT | VCC / GND / **A1** | Analógica |
-| SHT30 (Temp/Hum)  | VCC / GND / SDA / SCL | VCC / GND / **11** / **12** | I2C |
-
 ### Actuadores
 
 | Componente | Pin MKR1000 | Tipo de Señal |
 | ---------- | ----------- | ------------- |
 | LED Alerta | **6** | Digital (PWM) |
-| Buzzer     | **5** | Digital (PWM) |
+| LED Puerta | **8** | Digital (PWM) |
 
-### Pines SHT30 — Detalle por color de cable
+### MQ Sensor (Gas)
+
+| Pin Sensor | Pin MKR1000 | Tipo de Señal |
+| ---------- | ----------- | ------------- |
+| AO         |  **A0**     | Analógica     |
+| D0         |  **A2**     | Digital       |
+| VCC        |  **5V**     |               |
+| GND        |  **GND**    |               |
+
+### MAX4466 (Sonido)
+
+| Pin Sensor | Pin MKR1000 | Tipo de Señal |
+| ---------- | ----------- | ------------- |
+| OUT        |  **A1**     | Analógica     |
+| VCC        | **VCC (3.3V)** |            |
+| GND        |  **GND**    |               |
+
+### Pines SHT30 (Temp/Hum) — Detalle por color de cable
 
 | Color del Cable | Función I2C | Pin MKR1000 |
 | --------------- | ----------- | ----------- |
 | 🔴 Rojo   | VCC (3.3V) | VCC |
 | ⚫ Negro  | GND        | GND |
-| 🟡 Amarillo | SCL (Reloj) | **12** |
 | 🟢 Verde  | SDA (Datos) | **11** |
+| 🟡 Amarillo | SCL (Reloj) | **12** |
 
-### Pines disponibles para reasignar
-
-| Categoría | Pines disponibles |
-| --------- | ----------------- |
-| Entradas analógicas | A0, A1, A2, A3, A4, A5 |
-| Digitales PWM | 0–25 (excepto 11, 12 reservados para I2C) |
 
 > Para cambiar un pin, editá solo `src/mkr1000_firmware/src/config.h`.
