@@ -18,25 +18,25 @@ actuadores vía MQTT a través de un broker Mosquitto.
 ## Arquitectura
 
 ```
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│ MKR1000      │     │ ESP32-CAM    │     │ Navegador    │
-│ sensores +   │     │ cámara       │     │ (frontend)   │
-│ actuadores   │     │ snapshot     │     │              │
-└──────┬───────┘     └──────┬───────┘     └──────┬───────┘
-       │ MQTT               │ MQTT               │ HTTP :80
-       │                    │                    │
-       ▼                    ▼                    ▼
+┌──────────────┐     ┌──────────────┐     
+│ MKR1000      │     │ ESP32-CAM    │     
+│ sensores +   │     │ cámara       │     
+│ actuadores   │     │ snapshot     │     
+└──────┬───────┘     └──────┬───────┘     
+       │ MQTT               │ MQTT                
+       │                    │                    
+       ▼                    ▼                    
 ┌──────────────────────────────────────────────────────┐
 │                    Mosquitto                         │
-│                  broker MQTT :1883                    │
-└──────┬───────────────────────┬──────────────────────┘
+│                  broker MQTT :1883                   │
+└──────┬───────────────────────┬───────────────────────┘
        │                       │
        ▼                       ▼
-┌──────────────┐     ┌──────────────────┐
-│  Node-RED    │     │  Backend FastAPI │
-│  dashboard   │     │  face_recognition│
-│  reglas      │     │  API REST :8000  │
-│  Telegram    │     │  cliente MQTT    │
+┌──────────────┐     ┌──────────────────┐           ┌──────────────┐
+│  Node-RED    │     │  Backend FastAPI │           │ Navegador    │
+│  dashboard   │     │  face_recognition│           │ (frontend)   │
+│  reglas      │     │  API REST :8000  │<----------│              │
+│  Telegram    │     │  cliente MQTT    │  HTTP :80 └──────────────┘
 │  histórico   │     │                  │
 └──────────────┘     └──────────────────┘
 ```
@@ -45,11 +45,11 @@ actuadores vía MQTT a través de un broker Mosquitto.
 
 | Componente | Rol | Detalle |
 |---|---|---|
-| **Arduino MKR1000** | Nodo sensor / actuador | Lee SHT30 (temp/humedad), MQ-2 (gas), MAX4466 (sonido). Controla LED alerta, buzzer y LED puerta. Publica JSON de sensores cada 2s y recibe comandos ON/OFF por MQTT. |
+| **Arduino MKR1000** | Nodo sensor / actuador | Lee SHT30 (temp/humedad), MQ-2 (gas), MAX4466 (sonido). Controla LED alerta y LED puerta. Publica JSON de sensores cada 2s y recibe comandos ON/OFF por MQTT. |
 | **ESP32-CAM** | Cámara bajo demanda | Captura snapshots solo cuando recibe un comando MQTT (`camara/captura`). Sin stream MJPEG — imágenes vía MQTT como JPEG bytes. |
 | **Mosquitto** | Broker MQTT | Punto central de comunicación. Sin TLS ni autenticación (prototipo). Puerto 1883. |
 | **Node-RED** | Dashboard + reglas + notificaciones | Dashboard web con variables, gráfico histórico y controles. Reglas automáticas (temperatura alta, gas alto). Bot de Telegram con comandos `/status` y `/ayuda`. Registro histórico en CSV. |
-| **Backend FastAPI** | API REST + reconocimiento facial | Corre `face_recognition` (dlib). Captura bursts de 10s, detecta rostros conocidos, abre puerta si hay match. Publica eventos vía MQTT. |
+| **Backend FastAPI** | API REST + reconocimiento facial | Corre `face_recognition` (dlib). Captura bursts de 10s, detecta rostros conocidos, abre puerta si hay match, se puede guarda los rostros enrolados en una base de datos SQLite. Publica eventos vía MQTT. |
 | **Frontend HTML/JS** | Interfaz de control | Servido por nginx (:80), consume la API vía polling. Muestra cámara en vivo (MJPEG relay), historial de accesos y enrolamiento de rostros desconocidos. |
 
 **Equipo**: `equipo69` — presente como constante en firmware, backend y Node-RED.
@@ -152,7 +152,6 @@ Ejemplo:
 | Tópico | Payload | Efecto |
 |---|---|---|
 | `smarthome/equipo69/control/led` | `"ON"` / `"OFF"` | LED de alerta |
-| `smarthome/equipo69/control/buzzer` | `"ON"` / `"OFF"` | Buzzer |
 | `smarthome/equipo69/control/led-puerta` | `{"accion":"ON"}` / `{"accion":"OFF"}` | LED puerta (auto-apagado a los 3s) |
 
 ### Cámara — ESP32-CAM ↔ broker ↔ backend
