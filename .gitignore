@@ -30,6 +30,9 @@ __pycache__/
 deploy/nodered/data/flows_cred.json
 deploy/mosquitto/log/
 
+# Environment files (secrets)
+deploy/.env
+
 # Planificación y notas del equipo
 planificacion/
 deploy/data/

@@ -16,7 +16,11 @@ services:
       start_period: 5s
 
   nodered:
-    build: ./nodered
+    build:
+      context: ..
+      dockerfile: deploy/nodered/Dockerfile
+      args:
+        - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
     ports:
       - "1880:1880"
     volumes:
