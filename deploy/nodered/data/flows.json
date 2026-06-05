@@ -36,7 +36,6 @@
         "usernames": "",
         "chatids": "",
         "baseapiurl": "",
-        "testenvironment": false,
         "updatemode": "polling",
         "pollinterval": "1",
         "usesocks": false,
@@ -44,16 +43,8 @@
         "socksport": "",
         "socksusername": "",
         "sockspassword": "",
-        "bothost": "",
-        "botpath": "",
-        "localbothost": "",
-        "localbotport": "",
-        "publicbotport": "",
-        "privatekey": "",
-        "certificate": "",
-        "useselfsignedcertificate": false,
-        "sslterminated": false,
-        "verboselogging": false
+        "bothotsp": "",
+        "verbose": false
     },
     {
         "id": "ui_tab_main",
@@ -75,19 +66,9 @@
         "collapse": false
     },
     {
-        "id": "ui_group_control",
-        "type": "ui_group",
-        "name": "Control Manual y Actuadores",
-        "tab": "ui_tab_main",
-        "order": 2,
-        "disp": true,
-        "width": "6",
-        "collapse": false
-    },
-    {
         "id": "ui_group_security",
         "type": "ui_group",
-        "name": "Seguridad y Cámara (ESP32-CAM)",
+        "name": "Seguridad y C\u00e1mara (ESP32-CAM)",
         "tab": "ui_tab_main",
         "order": 3,
         "disp": true,
@@ -103,102 +84,6 @@
         "disp": true,
         "width": "6",
         "collapse": false
-    },
-    {
-        "id": "96bd3462926bd100",
-        "type": "ui_base",
-        "theme": {
-            "name": "theme-light",
-            "lightTheme": {
-                "default": "#0094CE",
-                "baseColor": "#0094CE",
-                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
-                "edited": false
-            },
-            "darkTheme": {
-                "default": "#097479",
-                "baseColor": "#097479",
-                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
-                "edited": false
-            },
-            "customTheme": {
-                "name": "Untitled Theme 1",
-                "default": "#4B7930",
-                "baseColor": "#4B7930",
-                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif"
-            },
-            "themeState": {
-                "base-color": {
-                    "default": "#0094CE",
-                    "value": "#0094CE",
-                    "edited": false
-                },
-                "page-titlebar-backgroundColor": {
-                    "value": "#0094CE",
-                    "edited": false
-                },
-                "page-backgroundColor": {
-                    "value": "#fafafa",
-                    "edited": false
-                },
-                "page-sidebar-backgroundColor": {
-                    "value": "#ffffff",
-                    "edited": false
-                },
-                "group-textColor": {
-                    "value": "#1bbfff",
-                    "edited": false
-                },
-                "group-borderColor": {
-                    "value": "#ffffff",
-                    "edited": false
-                },
-                "group-backgroundColor": {
-                    "value": "#ffffff",
-                    "edited": false
-                },
-                "widget-textColor": {
-                    "value": "#111111",
-                    "edited": false
-                },
-                "widget-backgroundColor": {
-                    "value": "#0094ce",
-                    "edited": false
-                },
-                "widget-borderColor": {
-                    "value": "#ffffff",
-                    "edited": false
-                },
-                "base-font": {
-                    "value": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif"
-                }
-            },
-            "angularTheme": {
-                "primary": "indigo",
-                "accents": "blue",
-                "warn": "red",
-                "background": "grey",
-                "palette": "light"
-            }
-        },
-        "site": {
-            "name": "Node-RED Dashboard",
-            "hideToolbar": "false",
-            "allowSwipe": "false",
-            "lockMenu": "false",
-            "allowTempTheme": "true",
-            "dateFormat": "DD/MM/YYYY",
-            "sizes": {
-                "sx": 48,
-                "sy": 48,
-                "gx": 6,
-                "gy": 6,
-                "cx": 6,
-                "cy": 6,
-                "px": 0,
-                "py": 0
-            }
-        }
     },
     {
         "id": "mqtt_in_datos",
@@ -264,7 +149,7 @@
         "height": 3,
         "gtype": "gage",
         "title": "Temperatura",
-        "label": "°C",
+        "label": "\u00b0C",
         "format": "{{value}}",
         "min": 0,
         "max": "50",
@@ -358,7 +243,7 @@
         "id": "ui_chart_temp",
         "type": "ui_chart",
         "z": "f6f2187d.f17ca8",
-        "name": "Gráfico de Temp",
+        "name": "Gr\u00e1fico de Temp",
         "group": "ui_group_charts",
         "order": 1,
         "width": 6,
@@ -399,96 +284,6 @@
         ]
     },
     {
-        "id": "ui_switch_led",
-        "type": "ui_switch",
-        "z": "f6f2187d.f17ca8",
-        "name": "Control LED",
-        "label": "LED de Alerta",
-        "tooltip": "Activar LED manual",
-        "group": "ui_group_control",
-        "order": 1,
-        "width": 6,
-        "height": 1,
-        "passthru": true,
-        "decouple": "false",
-        "topic": "control/led",
-        "style": "",
-        "onvalue": "ON",
-        "onvalueType": "str",
-        "onicon": "",
-        "oncolor": "",
-        "offvalue": "OFF",
-        "offvalueType": "str",
-        "officon": "",
-        "offcolor": "",
-        "animate": true,
-        "className": "",
-        "x": 150,
-        "y": 380,
-        "wires": [
-            [
-                "mqtt_out_led"
-            ]
-        ]
-    },
-    {
-        "id": "ui_switch_buzzer",
-        "type": "ui_switch",
-        "z": "f6f2187d.f17ca8",
-        "name": "Control Buzzer",
-        "label": "Zumbador (Buzzer)",
-        "tooltip": "Activar Buzzer manual",
-        "group": "ui_group_control",
-        "order": 2,
-        "width": 6,
-        "height": 1,
-        "passthru": true,
-        "decouple": "false",
-        "topic": "control/buzzer",
-        "style": "",
-        "onvalue": "ON",
-        "onvalueType": "str",
-        "onicon": "",
-        "oncolor": "",
-        "offvalue": "OFF",
-        "offvalueType": "str",
-        "officon": "",
-        "offcolor": "",
-        "animate": true,
-        "className": "",
-        "x": 160,
-        "y": 440,
-        "wires": [
-            [
-                "mqtt_out_buzzer"
-            ]
-        ]
-    },
-    {
-        "id": "ui_button_capture",
-        "type": "ui_button",
-        "z": "f6f2187d.f17ca8",
-        "name": "Capturar Imagen",
-        "group": "ui_group_control",
-        "order": 3,
-        "width": 6,
-        "height": 1,
-        "passthru": false,
-        "label": "Capturar Foto manual",
-        "tooltip": "Mandar comando de captura a la cámara",
-        "color": "",
-        "bgcolor": "",
-        "className": "",
-        "icon": "camera_alt",
-        "x": 160,
-        "y": 520,
-        "wires": [
-            [
-                "mqtt_out_camara_captura"
-            ]
-        ]
-    },
-    {
         "id": "mqtt_out_led",
         "type": "mqtt out",
         "z": "f6f2187d.f17ca8",
@@ -498,6 +293,7 @@
         "retain": "false",
         "respTopic": "",
         "contentType": "",
+        "userProperties": "",
         "correl": "",
         "expiry": "",
         "broker": "mqtt_broker_config",
@@ -515,6 +311,7 @@
         "retain": "false",
         "respTopic": "",
         "contentType": "",
+        "userProperties": "",
         "correl": "",
         "expiry": "",
         "broker": "mqtt_broker_config",
@@ -526,16 +323,15 @@
         "id": "sound_trigger",
         "type": "function",
         "z": "f6f2187d.f17ca8",
-        "name": "Trigger Sonido → Cámara",
+        "name": "Trigger Sonido \u2192 C\u00e1mara",
         "func": "var threshold = context.get('sound_threshold') || 600;\nvar sound = msg.payload.sensor_extra;\nif (sound !== undefined && sound > threshold) {\n    return {\n        payload: {\"accion\":\"iniciar_burst\",\"duracion\":5},\n        topic: \"smarthome/equipo69/camara/captura\"\n    };\n}\nreturn null;",
         "outputs": 1,
-        "timeout": "",
         "noerr": 0,
         "initialize": "context.set('sound_threshold', 600);",
         "finalize": "",
         "libs": [],
-        "x": 190,
-        "y": 320,
+        "x": 390,
+        "y": 500,
         "wires": [
             [
                 "mqtt_out_camara_captura"
@@ -552,6 +348,7 @@
         "retain": "false",
         "respTopic": "",
         "contentType": "",
+        "userProperties": "",
         "correl": "",
         "expiry": "",
         "broker": "mqtt_broker_config",
@@ -584,8 +381,8 @@
         "id": "process_vision_data",
         "type": "function",
         "z": "f6f2187d.f17ca8",
-        "name": "Procesar Visión",
-        "func": "var human = msg.payload.human; // true / false\nvar faces = msg.payload.faces; // Array de nombres\n\nvar presenceText = human ? \"DETECTADO\" : \"Nadie en cámara\";\nvar facesText = (faces && faces.length > 0) ? faces.join(\", \") : \"Ninguno\";\n\nreturn [\n    { payload: presenceText },\n    { payload: facesText },\n    { payload: human ? \"#ff3333\" : \"#33cc33\" }\n];",
+        "name": "Procesar Visi\u00f3n",
+        "func": "var human = msg.payload.human; // true / false\nvar faces = msg.payload.faces; // Array de nombres\n\nvar presenceText = human ? \"DETECTADO\" : \"Nadie en c\u00e1mara\";\nvar facesText = (faces && faces.length > 0) ? faces.join(\", \") : \"Ninguno\";\n\nreturn [\n    { payload: presenceText },\n    { payload: facesText },\n    { payload: human ? \"#ff3333\" : \"#33cc33\" }\n];",
         "outputs": 3,
         "noerr": 0,
         "initialize": "",
@@ -627,13 +424,15 @@
         "type": "ui_template",
         "z": "f6f2187d.f17ca8",
         "group": "ui_group_security",
-        "name": "Indicador Visual",
         "order": 2,
         "width": 3,
         "height": 1,
+        "name": "Indicador Visual",
         "format": "<div style=\"display: flex; align-items: center; justify-content: flex-end; height: 100%; padding-right: 10px;\">\n    <div style=\"width: 15px; height: 15px; border-radius: 50%; background-color: {{msg.payload || '#33cc33'}}; box-shadow: 0 0 8px {{msg.payload || '#33cc33'}};\"></div>\n    <span style=\"margin-left: 8px; font-weight: bold; font-size: 13px;\">Estado</span>\n</div>",
         "storeOutMessages": true,
         "fwdInMessages": true,
+        "resendOnClientConnect": true,
+        "layout": "row-spread",
         "className": "",
         "x": 640,
         "y": 660,
@@ -663,16 +462,18 @@
         "type": "ui_template",
         "z": "f6f2187d.f17ca8",
         "group": "ui_group_security",
-        "name": "Cámara (última captura)",
         "order": 4,
         "width": 6,
         "height": 6,
+        "name": "C\u00e1mara (\u00faltima captura)",
         "format": "<div style=\"text-align:center; height:100%; display:flex; flex-direction:column; justify-content:center; background:#1a1a1a; border-radius:6px; min-height:240px;\">\n    <div ng-if=\"!msg || !msg.payload\" style=\"color:#888; font-size:14px;\">Esperando captura...</div>\n    <div ng-bind-html=\"msg.payload\" style=\"width:100%;\"></div>\n</div>",
         "storeOutMessages": true,
         "fwdInMessages": true,
+        "resendOnClientConnect": true,
+        "layout": "row-spread",
         "className": "",
-        "x": 930,
-        "y": 640,
+        "x": 660,
+        "y": 720,
         "wires": [
             []
         ]
@@ -682,14 +483,14 @@
         "type": "function",
         "z": "f6f2187d.f17ca8",
         "name": "JPEG a Base64",
-        "func": "if (msg.payload && msg.payload.length > 0) {\n    var base64 = msg.payload.toString('base64');\n    msg.payload = '<img src=\"data:image/jpeg;base64,' + base64 + '\" style=\"width:100%; height:auto; border:2px solid #444; border-radius:4px; object-fit:contain;\" />';\n} else {\n    msg.payload = '<div style=\"color:#888;\">Imagen vacía</div>';\n}\nreturn msg;",
+        "func": "if (msg.payload && msg.payload.length > 0) {\n    var base64 = msg.payload.toString('base64');\n    msg.payload = '<img src=\"data:image/jpeg;base64,' + base64 + '\" style=\"width:100%; height:auto; border:2px solid #444; border-radius:4px; object-fit:contain;\" />';\n} else {\n    msg.payload = '<div style=\"color:#888;\">Imagen vac\u00eda</div>';\n}\nreturn msg;",
         "outputs": 1,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 900,
-        "y": 480,
+        "x": 380,
+        "y": 780,
         "wires": [
             [
                 "ui_camera_feed"
@@ -700,7 +501,7 @@
         "id": "img_in_001.abc",
         "type": "mqtt in",
         "z": "f6f2187d.f17ca8",
-        "name": "Imagen Cámara",
+        "name": "Imagen C\u00e1mara",
         "topic": "smarthome/equipo69/camara/imagen",
         "qos": "0",
         "datatype": "buffer",
@@ -709,8 +510,8 @@
         "rap": true,
         "rh": 0,
         "inputs": 0,
-        "x": 880,
-        "y": 380,
+        "x": 140,
+        "y": 780,
         "wires": [
             [
                 "b64_conv.001abc"
@@ -757,10 +558,9 @@
         "id": "rules_evaluator",
         "type": "function",
         "z": "f6f2187d.f17ca8",
-        "name": "Reglas de Control Automático",
-        "func": "var temp = msg.payload.temperatura;\nvar gas = msg.payload.gas;\nvar gasThreshold = context.get('gas_threshold') || 1020;\nvar alertTriggered = false;\nvar alertMsg = \"\";\n\nif (temp && temp > 30) {\n    alertTriggered = true;\n    alertMsg += \"⚠️ ¡Temperatura crítica: \" + temp + \"°C!\\n\";\n}\n\nif (gas && gas > gasThreshold) {\n    alertTriggered = true;\n    alertMsg += \"🔥 ¡Alerta de Gas detectada: \" + gas + \" ppm!\\n\";\n}\n\nif (alertTriggered) {\n    var telegramMsg = {\n        payload: {\n            chatId: -1003906928304,\n            type: \"message\",\n            content: \"🚨 *[SmartHome ALERTA]*\\n\\n\" + alertMsg + \"\\n*Timestamp:* \" + new Date().toLocaleString()\n        }\n    };\n    \n    return [\n        { payload: \"ON\", topic: \"control/led\" },\n        { payload: \"ON\", topic: \"control/buzzer\" },\n        telegramMsg\n    ];\n} else {\n    return [\n        null,\n        null,\n        null\n    ];\n}",
+        "name": "Reglas de Control Autom\u00e1tico",
+        "func": "var temp = msg.payload.temperatura;\nvar gas = msg.payload.gas;\nvar gasThreshold = context.get('gas_threshold') || 1020;\nvar alertTriggered = false;\nvar alertMsg = \"\";\n\nif (temp && temp > 30) {\n    alertTriggered = true;\n    alertMsg += \"\u26a0\ufe0f \u00a1Temperatura cr\u00edtica: \" + temp + \"\u00b0C!\\n\";\n}\n\nif (gas && gas > gasThreshold) {\n    alertTriggered = true;\n    alertMsg += \"\ud83d\udd25 \u00a1Alerta de Gas detectada: \" + gas + \" ppm!\\n\";\n}\n\nif (alertTriggered) {\n    var telegramMsg = {\n        payload: {\n            chatId: -1003906928304,\n            type: \"message\",\n            content: \"\ud83d\udea8 *[SmartHome ALERTA]*\\n\\n\" + alertMsg + \"\\n*Timestamp:* \" + new Date().toLocaleString()\n        }\n    };\n    \n    return [\n        { payload: \"ON\", topic: \"control/led\" },\n        { payload: \"ON\", topic: \"control/buzzer\" },\n        telegramMsg\n    ];\n} else {\n    return [\n        null,\n        null,\n        null\n    ];\n}",
         "outputs": 3,
-        "timeout": "",
         "noerr": 0,
         "initialize": "context.set('gas_threshold', 1020);",
         "finalize": "",
@@ -787,10 +587,6 @@
         "bot": "telegram_bot_config",
         "saveDataDir": "",
         "filterCommands": false,
-        "hasinput": false,
-        "inputs": 0,
-        "handleallupdates": false,
-        "handleprocessupdates": false,
         "x": 140,
         "y": 740,
         "wires": [
@@ -805,7 +601,7 @@
         "type": "function",
         "z": "f6f2187d.f17ca8",
         "name": "Router de Comandos",
-        "func": "var command = msg.payload.content || msg.payload.text;\nvar chatId = msg.payload.chatId || (msg.payload.chat && msg.payload.chat.id) || msg.chatId;\n\n// Debug de entrada en consola de Node-RED\nnode.log(\"Recibido comando: \" + command + \" de chatId: \" + chatId);\n\nif (command === \"/status\") {\n    var temp = global.get(\"last_temp\") || \"No disponible\";\n    var hum = global.get(\"last_hum\") || \"No disponible\";\n    var gas = global.get(\"last_gas\") || \"No disponible\";\n    var sound = global.get(\"last_sound\") || \"No disponible\";\n    \n    msg.payload = {\n        chatId: chatId,\n        type: \"message\",\n        content: \"📊 *SmartHome Status*\\n\\n\" +\n                 \"🌡️ *Temp:* \" + temp + \" °C\\n\" +\n                 \"💧 *Humedad:* \" + hum + \" %\\n\" +\n                 \"🔥 *Gas (MQ-2):* \" + gas + \" ppm\\n\" +\n                 \"🔊 *Sonido:* \" + sound + \"\\n\\n\" +\n                 \"*Timestamp:* \" + new Date().toLocaleString()\n    };\n    node.log(\"Respondiendo con status a: \" + chatId);\n    return [msg, null];\n} else if (command === \"/ayuda\" || command === \"/start\") {\n    msg.payload = {\n        chatId: chatId,\n        type: \"message\",\n        content: \"🤖 *SmartHome Bot*\\n\\n\" +\n                 \"Comandos disponibles:\\n\" +\n                 \"🔹 `/status` - Muestra lecturas en tiempo real\\n\" +\n                 \"🔹 `/ayuda` - Lista los comandos\"\n    };\n    node.log(\"Respondiendo con ayuda a: \" + chatId);\n    return [msg, null];\n}\nnode.log(\"Comando desconocido ignorado.\");\nreturn null;",
+        "func": "var command = msg.payload.content || msg.payload.text;\nvar chatId = msg.payload.chatId || (msg.payload.chat && msg.payload.chat.id) || msg.chatId;\n\n// Debug de entrada en consola de Node-RED\nnode.log(\"Recibido comando: \" + command + \" de chatId: \" + chatId);\n\nif (command === \"/status\") {\n    var temp = global.get(\"last_temp\") || \"No disponible\";\n    var hum = global.get(\"last_hum\") || \"No disponible\";\n    var gas = global.get(\"last_gas\") || \"No disponible\";\n    var sound = global.get(\"last_sound\") || \"No disponible\";\n    \n    msg.payload = {\n        chatId: chatId,\n        type: \"message\",\n        content: \"\ud83d\udcca *SmartHome Status*\\n\\n\" +\n                 \"\ud83c\udf21\ufe0f *Temp:* \" + temp + \" \u00b0C\\n\" +\n                 \"\ud83d\udca7 *Humedad:* \" + hum + \" %\\n\" +\n                 \"\ud83d\udd25 *Gas (MQ-2):* \" + gas + \" ppm\\n\" +\n                 \"\ud83d\udd0a *Sonido:* \" + sound + \"\\n\\n\" +\n                 \"*Timestamp:* \" + new Date().toLocaleString()\n    };\n    node.log(\"Respondiendo con status a: \" + chatId);\n    return [msg, null];\n} else if (command === \"/ayuda\" || command === \"/start\") {\n    msg.payload = {\n        chatId: chatId,\n        type: \"message\",\n        content: \"\ud83e\udd16 *SmartHome Bot*\\n\\n\" +\n                 \"Comandos disponibles:\\n\" +\n                 \"\ud83d\udd39 `/status` - Muestra lecturas en tiempo real\\n\" +\n                 \"\ud83d\udd39 `/ayuda` - Lista los comandos\"\n    };\n    node.log(\"Respondiendo con ayuda a: \" + chatId);\n    return [msg, null];\n}\nnode.log(\"Comando desconocido ignorado.\");\nreturn null;",
         "outputs": 2,
         "noerr": 0,
         "initialize": "",
@@ -829,7 +625,7 @@
         "bot": "telegram_bot_config",
         "haserroroutput": false,
         "outputs": 1,
-        "x": 810,
+        "x": 660,
         "y": 740,
         "wires": [
             []
@@ -860,7 +656,7 @@
         "props": [
             {
                 "p": "payload",
-                "v": "{\"chatId\":1511171371,\"type\":\"message\",\"content\":\"🔔 Prueba de inyección manual desde Node-RED\"}",
+                "v": "{\"chatId\":1511171371,\"type\":\"message\",\"content\":\"\ud83d\udd14 Prueba de inyecci\u00f3n manual desde Node-RED\"}",
                 "vt": "json"
             }
         ],

@@ -20,6 +20,20 @@
  *
  **/
 
+/**
+ * DNS fix — force IPv4 to avoid Telegram API timeouts on dual-stack networks.
+ * Required for node-red-contrib-telegrambot polling to work reliably.
+ */
+const dns = require('dns');
+const originalLookup = dns.lookup;
+dns.lookup = function (hostname, options, callback) {
+    if (typeof options === 'function') { callback = options; options = {}; }
+    else if (typeof options === 'number') { options = { family: options }; }
+    else if (!options) { options = {}; }
+    options.family = 4;
+    return originalLookup.call(this, hostname, options, callback);
+};
+
 module.exports = {
 
 /*******************************************************************************
@@ -41,7 +55,7 @@ module.exports = {
      * node-red from being able to decrypt your existing credentials and they will be
      * lost.
      */
-    credentialSecret: "SmartHomeIoT-Proy1-2026",
+    credentialSecret: false,
 
     /** By default, the flow JSON will be formatted over multiple lines making
      * it easier to compare changes when using version control.
@@ -53,7 +67,7 @@ module.exports = {
      * the user's home directory. To use a different location, the following
      * property can be used
      */
-    //userDir: '/home/nol/.node-red/',
+    userDir: '/data',
 
     /** Node-RED scans the `nodes` directory in the userDir to find local node files.
      * The following property can be used to specify an additional directory to scan.

@@ -30,9 +30,20 @@ __pycache__/
 deploy/nodered/data/flows_cred.json
 deploy/mosquitto/log/
 
+# Node-RED runtime — auto-generated and credential files
+deploy/nodered/data/.config.*.json
+deploy/nodered/data/.config.*.json.backup
+deploy/nodered/data/.flows*.json.backup
+deploy/nodered/data/.nodered-initialized
+deploy/nodered/data/.npm/
+deploy/nodered/data/historial.csv
+
 # Environment files (secrets)
 deploy/.env
 
 # Planificación y notas del equipo
 planificacion/
 deploy/data/
+
+# Gentle AI — tooling artifacts (auto-generated)
+.atl/
