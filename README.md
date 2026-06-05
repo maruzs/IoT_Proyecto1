@@ -14,6 +14,8 @@ actuadores vía MQTT a través de un broker Mosquitto.
 - [Bot de Telegram](#bot-de-telegram)
 - [Dashboard Node-RED](#dashboard-node-red)
 - [Estructura del repositorio](#estructura-del-repositorio)
+- [Inventario](#inventario)
+- [Diagrama de pines - MKR1000](#diagrama-de-pines--mkr1000)
 
 ## Arquitectura
 
