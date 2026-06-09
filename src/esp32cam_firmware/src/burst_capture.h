@@ -1,8 +1,8 @@
 /**
  * burst_capture.h — Non-blocking burst capture state machine
  *
- * Receives MQTT iniciar_burst command, starts HTTP camera server,
- * publishes stream URL, and stops after BURST_DURATION_S.
+ * Receives MQTT iniciar_burst command, captures frames at regular
+ * intervals and publishes each one via MQTT. Stops after BURST_DURATION_S.
  */
 
 #ifndef BURST_CAPTURE_H

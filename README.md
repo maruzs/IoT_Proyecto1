@@ -48,7 +48,7 @@ actuadores vía MQTT a través de un broker Mosquitto.
 | Componente | Rol | Detalle |
 |---|---|---|
 | **Arduino MKR1000** | Nodo sensor / actuador | Lee SHT30 (temp/humedad), MQ-2 (gas), MAX4466 (sonido). Controla LED alerta y LED puerta. Publica JSON de sensores cada 2s y recibe comandos ON/OFF por MQTT. |
-| **ESP32-CAM** | Cámara bajo demanda | Captura snapshots solo cuando recibe un comando MQTT (`camara/captura`). Sin stream MJPEG — imágenes vía MQTT como JPEG bytes. |
+| **ESP32-CAM** | Cámara bajo demanda | Recibe comandos MQTT (`camara/captura`) y captura frames en ráfaga (~4 fps durante 5s). Sin stream MJPEG — cada JPEG se publica vía MQTT. |
 | **Mosquitto** | Broker MQTT | Punto central de comunicación. Sin TLS ni autenticación (prototipo). Puerto 1883. |
 | **Node-RED** | Dashboard + reglas + notificaciones | Dashboard web con variables, gráfico histórico y controles. Reglas automáticas (temperatura alta, gas alto). Bot de Telegram con comandos `/status` y `/ayuda`. Registro histórico en CSV. |
 | **Backend FastAPI** | API REST + reconocimiento facial | Corre `face_recognition` (dlib). Captura bursts de 10s, detecta rostros conocidos, abre puerta si hay match, se puede guarda los rostros enrolados en una base de datos SQLite. Publica eventos vía MQTT. |
@@ -122,7 +122,7 @@ docker compose down -v       # borra TODO (reset completo)
 
 ## Jerarquía MQTT
 
-Todos los tópicos usan el prefijo `smarthome/equipo69/`. Definidos en `src/mkr1000_firmware/src/config.h`, `src/esp32cam_firmware/src/config.h` y `src/backend/mqtt_client/client.py`.
+Todos los tópicos usan el prefijo `smarthome/equipo69/`. Definidos en `src/mkr1000_firmware/src/config.h`, `src/esp32cam_firmware/src/config.h` y `src/backend/mqtt_client/client.py`. La ESP32-CAM solo define 3 tópicos: `evento`, `captura` e `imagen`.
 
 ### Sensores — MKR1000 → broker
 
@@ -160,9 +160,8 @@ Ejemplo:
 
 | Tópico | Dirección | Payload |
 |---|---|---|
-| `smarthome/equipo69/camara/evento` | ESP32 → broker | `"camara_lista"` |
+| `smarthome/equipo69/camara/evento` | ESP32 → broker | `{"status":"camara_lista"}` / `{"estado":"burst_complete"}` |
 | `smarthome/equipo69/camara/imagen` | ESP32 → broker | JPEG bytes (MQTT_MAX_PACKET_SIZE=65536) |
-| `smarthome/equipo69/camara/url` | ESP32 → broker | `{"url":"http://192.168.1.X"}` |
 | `smarthome/equipo69/camara/captura` | backend → ESP32 | `{"accion":"iniciar_burst","duracion":5}` |
 
 ### Acceso — backend → broker
@@ -199,8 +198,8 @@ Base: `http://localhost:8000/api` (o `http://localhost/api` a través de nginx).
 ### Flujo de reconocimiento facial
 
 1. `POST /api/capturar` → backend publica `camara/captura` por MQTT.
-2. ESP32-CAM recibe el comando y captura snapshots durante 5 segundos.
-3. Cada JPEG se publica en `camara/imagen` (QoS 1).
+2. ESP32-CAM recibe el comando e inicia ráfaga: captura frames a ~4 fps durante 5 segundos.
+3. Cada JPEG se publica en `camara/imagen` (QoS 1) apenas se captura.
 4. Backend recibe los frames, procesa en sub-bursts de 3 segundos con `face_recognition`.
 5. Si reconoce a alguien → publica `acceso/estado: permitido` y `control/led-puerta: ON`.
 6. Si detecta un rostro no reconocido → publica `acceso/enrolar` para que el frontend ofrezca enrolar.

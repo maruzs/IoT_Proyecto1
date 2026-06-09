@@ -1,4 +1,5 @@
 import json
+import time
 from typing import Callable
 import numpy as np
 from ..database.db import insert_event
@@ -24,7 +25,12 @@ class MQTTCommandOutput(CommandOutput):
             )
             self._publish(
                 "acceso/enrolar",
-                json.dumps({"accion": "enrolar", "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S")}),
+                json.dumps(
+                    {
+                        "accion": "enrolar",
+                        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                    }
+                ),
             )
             insert_event("Desconocido Detectado")
         else:

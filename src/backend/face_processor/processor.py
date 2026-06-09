@@ -20,8 +20,8 @@ class FaceProcessor:
         self._best_bbox_area: float = 0
         self._match_counter: dict[int, int] = {}  # user_id -> consecutive matches
         self._MIN_CONSECUTIVE_MATCHES = 3  # frames confirming same face
-        self._TOLERANCE = 0.45              # strict: fewer false positives
-        self._MIN_CONFIDENCE = 0.60         # minimum confidence to accept match
+        self._TOLERANCE = 0.35  # strict: fewer false positives
+        self._MIN_CONFIDENCE = 0.50  # minimum confidence to accept match
 
     def process_burst(self, frames: list[np.ndarray]) -> dict:
         """Process a burst of frames (5s capture).
@@ -92,7 +92,10 @@ class FaceProcessor:
         if self._cached_unknown_frame is None:
             raise ValueError("No cached unknown frame to enroll")
 
-        if self._enrollment_deadline is not None and datetime.now() > self._enrollment_deadline:
+        if (
+            self._enrollment_deadline is not None
+            and datetime.now() > self._enrollment_deadline
+        ):
             self._cached_unknown_frame = None
             self._enrollment_deadline = None
             raise ValueError("Enrollment deadline expired")
