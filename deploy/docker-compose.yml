@@ -54,6 +54,7 @@ services:
       - DISPLAY=${DISPLAY}
       - TZ=America/Santiago
       - OPENCV_VIDEOIO_BACKEND=V4L2
+      - PYTHONUNBUFFERED=1
     depends_on:
       mosquitto:
         condition: service_healthy

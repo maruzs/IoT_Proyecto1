@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import sys
 
 import uvicorn
 from fastapi import FastAPI
@@ -22,8 +23,34 @@ _capture_lock = asyncio.Lock()
 _capturing = False
 
 
+def _configure_logging() -> None:
+    """Ensure face_processor and app loggers write to stdout
+    regardless of uvicorn's internal log configuration."""
+    fmt = logging.Formatter(
+        "%(asctime)s [%(levelname)-7s] %(name)s | %(message)s",
+        datefmt="%H:%M:%S",
+    )
+
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(fmt)
+
+    for name in ("src.backend.face_processor", "src.backend", "src.backend.api"):
+        lg = logging.getLogger(name)
+        lg.setLevel(logging.INFO)
+        # Avoid duplicate handlers across hot-reloads
+        if not any(isinstance(h, logging.StreamHandler) for h in lg.handlers):
+            lg.addHandler(handler)
+        lg.propagate = False  # don't bubble to uvicorn's root config
+
+    # Quiet down uvicorn access logs so they don't drown recognition messages
+    logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+
+
 @app.on_event("startup")
 async def startup():
+    # 0. Configure logging so face_processor messages are visible
+    _configure_logging()
+
     # 1. Initialize database
     init_db()
 

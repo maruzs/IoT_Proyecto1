@@ -34,6 +34,9 @@ class FaceProcessor:
         self._best_bbox_area = 0
         self._match_counter.clear()
 
+        frames_with_faces = 0
+        frames_without_faces = 0
+
         for frame in frames:
             try:
                 faces = self._detect_faces(frame)
@@ -42,13 +45,26 @@ class FaceProcessor:
                 continue
 
             if not faces:
+                frames_without_faces += 1
                 continue
 
+            frames_with_faces += 1
             self._select_best_frame(frame, faces)
 
             for _bbox, encoding in faces:
                 match = self._match_face(encoding)
                 if match and self._confirm_match(match):
+                    logger.info(
+                        "RECONOCIMIENTO EXITOSO | usuario=%s (id=%d) | "
+                        "confidence=%.3f | frames_procesados=%d | "
+                        "frames_con_caras=%d | frames_sin_caras=%d",
+                        match["nombre"],
+                        match["id"],
+                        match["confidence"],
+                        len(frames),
+                        frames_with_faces,
+                        frames_without_faces,
+                    )
                     return {
                         "estado": "permitido",
                         "usuario": match["nombre"],
@@ -59,12 +75,25 @@ class FaceProcessor:
 
         if self._cached_unknown_frame is not None:
             self._enrollment_deadline = datetime.now() + timedelta(seconds=60)
+            logger.warning(
+                "RECONOCIMIENTO FALLIDO — rostro desconocido | "
+                "frames_procesados=%d | frames_con_caras=%d | "
+                "frames_sin_caras=%d | enrolable=True (ventana 60s)",
+                len(frames),
+                frames_with_faces,
+                frames_without_faces,
+            )
             return {
                 "estado": "denegado",
                 "usuario": None,
                 "frame": self._cached_unknown_frame,
             }
 
+        logger.info(
+            "RECONOCIMIENTO FALLIDO — sin rostros en el burst | "
+            "frames_procesados=%d",
+            len(frames),
+        )
         return {"estado": "denegado", "usuario": None, "frame": None}
 
     def get_enrollment_deadline(self) -> datetime | None:
@@ -110,6 +139,13 @@ class FaceProcessor:
         encoding_blob = pickle.dumps(encoding)
         user_id = insert_user(nombre, encoding_blob)
 
+        logger.info(
+            "ENROLAMIENTO | usuario=%s (id=%d) | encoding_size=%d bytes",
+            nombre,
+            user_id,
+            len(encoding_blob),
+        )
+
         self._cached_unknown_frame = None
         self._enrollment_deadline = None
         self._best_bbox_area = 0
@@ -134,6 +170,7 @@ class FaceProcessor:
         """
         users = [u for u in get_all_users() if u["autorizado"]]
         if not users:
+            logger.debug("No hay usuarios autorizados en la base de datos")
             return None
 
         known_encodings = [pickle.loads(u["rostro_encoding"]) for u in users]
@@ -142,6 +179,11 @@ class FaceProcessor:
         )
 
         if True not in matches:
+            logger.debug(
+                "Sin coincidencia | usuarios_comparados=%d | tolerancia=%.2f",
+                len(users),
+                self._TOLERANCE,
+            )
             return None
 
         distances = face_recognition.face_distance(known_encodings, encoding)
@@ -151,8 +193,20 @@ class FaceProcessor:
         confidence = float(1 - distances[best_idx])
 
         if confidence < self._MIN_CONFIDENCE:
+            logger.info(
+                "Coincidencia descartada por baja confianza | "
+                "mejor_candidato=%s | confidence=%.3f < %.2f",
+                users[best_idx]["nombre"],
+                confidence,
+                self._MIN_CONFIDENCE,
+            )
             return None
 
+        logger.debug(
+            "Coincidencia encontrada | candidato=%s | confidence=%.3f",
+            users[best_idx]["nombre"],
+            confidence,
+        )
         return {
             "id": users[best_idx]["id"],
             "nombre": users[best_idx]["nombre"],
