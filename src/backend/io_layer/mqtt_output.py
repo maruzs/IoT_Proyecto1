@@ -5,6 +5,8 @@ from ..database.db import insert_event
 from .command_output import CommandOutput
 
 
+import time
+
 class MQTTCommandOutput(CommandOutput):
     """MQTT output adapter: publishes access decisions and door commands
     via an injected ``publish_func``.
@@ -28,6 +30,10 @@ class MQTTCommandOutput(CommandOutput):
             )
             insert_event("Desconocido Detectado")
         else:
+            self._publish(
+                "acceso/estado",
+                json.dumps({"estado": "denegado", "usuario": "sin_rostro"}),
+            )
             insert_event("Sin Rostro")
 
     def notify_access(self, user_name: str, user_id: int | None = None) -> None:

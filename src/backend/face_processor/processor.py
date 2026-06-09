@@ -21,7 +21,7 @@ class FaceProcessor:
         self._match_counter: dict[int, int] = {}  # user_id -> consecutive matches
         self._MIN_CONSECUTIVE_MATCHES = 3  # frames confirming same face
         self._TOLERANCE = 0.45              # strict: fewer false positives
-        self._MIN_CONFIDENCE = 0.60         # minimum confidence to accept match
+        self._MIN_CONFIDENCE = 0.50         # minimum confidence to accept match
 
     def process_burst(self, frames: list[np.ndarray]) -> dict:
         """Process a burst of frames (5s capture).
