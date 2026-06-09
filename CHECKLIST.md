@@ -2,10 +2,10 @@
 
 ### 1. Hardware y Sensores (20% de la nota)
 
-* [] **Lectura de 4 variables físicas:** Configurar y leer datos del **SHT30** (Temperatura), **SHT30** (Humedad), **MQ Sensor** (Gas) y el **MAX4466** (Sonido/Diferencial).
-* [] **Conexión de Placas:** Programar la **Arduino MKR 1000** o **ESP32** para gestionar los sensores.
-* [] **Actuadores:** Instalar y cablear los **LEDs** y un **Buzzer** para las respuestas automáticas.
-* [] **Sensor Diferencial:** Integrar correctamente el sensor extra (Micrófono) en el sistema.
+* [X] **Lectura de 4 variables físicas:** Configurar y leer datos del **SHT30** (Temperatura), **SHT30** (Humedad), **MQ Sensor** (Gas) y el **MAX4466** (Sonido/Diferencial).
+* [X] **Conexión de Placas:** Programar la **Arduino MKR 1000** o **ESP32** para gestionar los sensores.
+* [X] **Actuadores:** Instalar y cablear los **LEDs** y un **Buzzer** para las respuestas automáticas.
+* [X] **Sensor Diferencial:** Integrar correctamente el sensor extra (Micrófono) en el sistema.
 
 
 

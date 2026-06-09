@@ -2,7 +2,7 @@
  * mqtt_bridge.cpp — ESP32-CAM MQTT Implementation
  *
  * Gestiona la conexión MQTT del ESP32-CAM usando PubSubClient.
- * Publica eventos en TOPIC_CAMARA_EVENTO y suscribe a TOPIC_CAMARA_CONTROL.
+ * Publica eventos e imágenes. Suscribe solo a TOPIC_CAMARA_CAPTURA.
  */
 
 // MQTT_MAX_PACKET_SIZE must be BEFORE ANY PubSubClient include
@@ -22,7 +22,6 @@ bool ensureCameraMQTTConnected() {
     if (!cameraClient.connected()) {
         if (!cameraClient.connect(EQUIPO_ID "-cam")) return false;
         // Re-suscribir después de reconexión
-        cameraClient.subscribe(TOPIC_CAMARA_CONTROL);
         cameraClient.subscribe(TOPIC_CAMARA_CAPTURA);
         Serial.println("MQTT reconectado + resuscrito");
     }
@@ -60,7 +59,6 @@ bool publishCameraImage(const uint8_t* data, size_t len) {
 
 void subscribeToCameraControl(void (*callback)(char*, byte*, unsigned int)) {
     cameraClient.setCallback(callback);
-    cameraClient.subscribe(TOPIC_CAMARA_CONTROL);
     cameraClient.subscribe(TOPIC_CAMARA_CAPTURA);
 }
 
