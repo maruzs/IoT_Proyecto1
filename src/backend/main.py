@@ -105,7 +105,7 @@ async def run_capture(request, duration: float = 10.0):
                         result.get("usuario_id"),
                     )
                     await asyncio.to_thread(command_output.door_open, 3)
-                elif result.get("frame") is not None:
+                else:
                     await asyncio.to_thread(
                         command_output.notify_unknown, result.get("frame")
                     )
@@ -125,7 +125,7 @@ async def run_capture(request, duration: float = 10.0):
                     result.get("usuario_id"),
                 )
                 await asyncio.to_thread(command_output.door_open, 3)
-            elif result.get("frame") is not None:
+            else:
                 await asyncio.to_thread(
                     command_output.notify_unknown, result.get("frame")
                 )
