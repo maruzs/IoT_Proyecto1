@@ -14,6 +14,7 @@ actuadores vía MQTT a través de un broker Mosquitto.
 - [Bot de Telegram](#bot-de-telegram)
 - [Dashboard Node-RED](#dashboard-node-red)
 - [Estructura del repositorio](#estructura-del-repositorio)
+- [Roadmap Unidad 2 y 3](#roadmap-unidad-2-y-3)
 - [Inventario](#inventario)
 - [Diagrama de pines - MKR1000](#diagrama-de-pines--mkr1000)
 
@@ -406,6 +407,101 @@ IoT_Proyecto1/
 ├── Proyecto.md                   # Enunciado original del proyecto
 └── README.md                     # Este archivo
 ```
+
+## Roadmap Unidad 2 y 3
+
+23 issues con dependencias organizadas en fases. Cada issue incluye criterios de aceptación en Gherkin. [Ver issues →](https://github.com/maruzs/IoT_Proyecto1/issues?q=is%3Aopen+label%3Aunidad-2%2Cunidad-3)
+
+```mermaid
+graph TD
+    subgraph U2["🔐 Unidad 2 — Protocolos, Seguridad y LLM Local"]
+        T1["#5 — MQTT Broker TLS+auth"]
+        T2["#6 — ACLs Mosquitto"]
+        T3["#7 — Firmware MKR1000+ESP32 TLS"]
+        T4["#8 — ESP32 CoAP"]
+        T5["#9 — CoAP Bridge"]
+        T6["#10 — Instalar Ollama"]
+        T7["#11 — LLM Gateway"]
+        T8["#12 — MCP Tools"]
+        T9["#13 — LangGraph Agent U2"]
+        T10["#14 — NL Query UI"]
+        T11["#15 — Node-RED TLS+LLM"]
+        T12["#16 — Análisis Vulnerabilidad"]
+    end
+
+    subgraph U3["🏭 Unidad 3 — Gemelo Digital y Agente Autónomo"]
+        T13["#17 — Docker Compose"]
+        T14["#18 — InfluxDB"]
+        T15["#19 — Digital Twin"]
+        T16["#20 — Prediction Engine"]
+        T17["#21 — LangGraph Agent U3"]
+        T18["#22 — Alert Manager"]
+        T20["#23 — Grafana Dashboard"]
+        T21["#24 — Grafana Alertas"]
+    end
+
+    subgraph DOC["📄 Documentación"]
+        T22["#25 — Análisis Industrial"]
+        T23["#26 — Informe U2"]
+        T24["#27 — Informe Final"]
+    end
+
+    T1 --> T2
+    T1 --> T3
+    T1 --> T5
+    T4 --> T5
+    T1 --> T7
+    T6 --> T7
+    T7 --> T8
+    T7 --> T9
+    T7 --> T11
+    T11 --> T10
+    T2 --> T12
+
+    T13 --> T14
+    T13 --> T15
+    T8 --> T15
+    T14 --> T16
+    T15 --> T16
+    T13 --> T18
+    T9 --> T17
+    T15 --> T17
+    T16 --> T17
+    T18 --> T17
+    T14 --> T20
+    T16 --> T20
+    T17 --> T20
+    T18 --> T21
+    T20 --> T21
+
+    T12 --> T23
+    T1 --> T23
+    T13 --> T22
+    T23 --> T24
+    T22 --> T24
+    T13 --> T24
+
+    style U2 fill:#1a1a2e,stroke:#6C47FF,color:#e0e0ff
+    style U3 fill:#1a2e1a,stroke:#47ff6c,color:#e0ffe0
+    style DOC fill:#2e1a1a,stroke:#ff6c47,color:#ffe0e0
+```
+
+| Fase | Issues | Dependencia clave |
+|------|--------|-------------------|
+| 🔴 **Infraestructura segura** | #5, #6, #7, #10 | Ninguna — arranque inmediato |
+| 🟡 **CoAP** | #8, #9 | MQTT seguro listo |
+| 🔴 **LLM Gateway + LangGraph U2** | #11, #12, #13 | Ollama + MQTT seguro |
+| 🟡 **Node-RED + NL Query** | #14, #15 | LLM Gateway respondiendo |
+| 🟡 **Análisis seguridad** | #16 | ACLs definidas |
+| 🔴 **Docker Compose + InfluxDB** | #17, #18 | Infraestructura base U3 |
+| 🔴 **Digital Twin + Predicción** | #19, #20 | InfluxDB + MCP Tools (de U2) |
+| 🔴 **Agente Autónomo** | #21 | LangGraph U2 + Digital Twin + Predicción + Alert Manager |
+| 🟡 **Alert Manager** | #22 | Docker Compose |
+| 🔴 **Grafana** | #23, #24 | InfluxDB + Predicción + Agente |
+| 🟢 **Análisis industrial** | #25 | Sistema completo funcionando |
+| 🟡 **Informes** | #26, #27 | Funcionalidad respectiva completada |
+
+> **Arquitectura:** Microservicios Python (FastAPI) + LangGraph como motor de agente + MCP para tools + Ollama en host (no Docker). Las tarjetas completas con Gherkin están en [`documentos/tasks-volere-unidad-2-y-3.md`](documentos/tasks-volere-unidad-2-y-3.md).
 
 ## Troubleshooting
 
