@@ -63,10 +63,16 @@ openssl req -new -key "${CERTS_DIR}/server.key" \
     -out "${CERTS_DIR}/server.csr" \
     -subj "/C=AR/O=SmartHomeIoT/CN=mosquitto" 2>/dev/null
 
+BROKER_IP="${MQTT_BROKER_IP:-}"
+SAN="DNS:mosquitto,DNS:localhost,IP:127.0.0.1"
+if [ -n "$BROKER_IP" ]; then
+    SAN="${SAN},IP:${BROKER_IP}"
+fi
+
 openssl x509 -req -in "${CERTS_DIR}/server.csr" \
     -CA "${CERTS_DIR}/ca.crt" -CAkey "${CERTS_DIR}/ca.key" \
     -CAcreateserial -out "${CERTS_DIR}/server.crt" -days 365 \
-    -extfile <(printf "subjectAltName=DNS:mosquitto,DNS:localhost,IP:127.0.0.1") 2>/dev/null
+    -extfile <(printf "subjectAltName=${SAN}") 2>/dev/null
 
 # ---------------------------------------------------------------------------
 # Clean up intermediate files

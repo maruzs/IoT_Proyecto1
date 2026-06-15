@@ -256,7 +256,7 @@ fi
 echo ""
 echo "  Seguridad — Anónimo rechazado..."
 
-docker compose -f "${DEPLOY_DIR}/docker-compose.yml" exec -T mosquitto \
+timeout 5 docker compose -f "${DEPLOY_DIR}/docker-compose.yml" exec -T mosquitto \
     mosquitto_pub \
     -h 127.0.0.1 -p 8883 \
     --cafile /mosquitto/certs/ca.crt \
