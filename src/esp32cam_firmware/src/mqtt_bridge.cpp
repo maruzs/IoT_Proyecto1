@@ -11,16 +11,23 @@
 #include "config.h"
 
 static PubSubClient cameraClient;
+static const char* mqttUsername = nullptr;
+static const char* mqttPassword = nullptr;
 
-void initCameraMQTT(WiFiClient& wifiClient, const char* server) {
-    cameraClient.setClient(wifiClient);
-    cameraClient.setServer(server, 1883);
+void initCameraMQTT(WiFiClientSecure& secureClient, const char* server,
+                    uint16_t port, const char* username,
+                    const char* password, const char* caCert) {
+    secureClient.setCACert(caCert);
+    cameraClient.setClient(secureClient);
+    cameraClient.setServer(server, port);
     cameraClient.setBufferSize(60000);  // Necesario para imágenes JPEG (~15-30 KB)
+    mqttUsername = username;
+    mqttPassword = password;
 }
 
 bool ensureCameraMQTTConnected() {
     if (!cameraClient.connected()) {
-        if (!cameraClient.connect(EQUIPO_ID "-cam")) return false;
+        if (!cameraClient.connect(EQUIPO_ID "-cam", mqttUsername, mqttPassword)) return false;
         // Re-suscribir después de reconexión
         cameraClient.subscribe(TOPIC_CAMARA_CAPTURA);
         Serial.println("MQTT reconectado + resuscrito");

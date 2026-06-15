@@ -6,9 +6,10 @@
 #include "src/mqtt_bridge.h"
 #include "src/burst_capture.h"
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include "Arduino.h"
 
-WiFiClient wifiClient;
+WiFiClientSecure secureClient;
 
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
     char msg[128] = {0};
@@ -35,7 +36,7 @@ void setup() {
     if (!initCamera()) { Serial.println("Camara fallo"); return; }
     // Modo snapshot: sin stream MJPEG. Imágenes solo bajo demanda vía MQTT.
     delay(500);  // Pequeña pausa post-WiFi para estabilizar
-    initCameraMQTT(wifiClient, MQTT_SERVER);
+    initCameraMQTT(secureClient, MQTT_SERVER, MQTT_PORT, MQTT_USER, MQTT_PASSWORD, CA_CERT);
     Serial.print("Conectando MQTT a "); Serial.print(MQTT_SERVER); Serial.print("... ");
     if (ensureCameraMQTTConnected()) {
         Serial.println("OK");

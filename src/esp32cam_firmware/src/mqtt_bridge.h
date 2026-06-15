@@ -15,9 +15,12 @@
 #endif
 
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 
-void initCameraMQTT(WiFiClient& wifiClient, const char* server);
+void initCameraMQTT(WiFiClientSecure& secureClient, const char* server,
+                    uint16_t port, const char* username,
+                    const char* password, const char* caCert);
 bool ensureCameraMQTTConnected();
 bool isCameraMQTTConnected();
 bool publishCameraEvent(const char* event);
