@@ -256,14 +256,13 @@ fi
 echo ""
 echo "  Seguridad — Anónimo rechazado..."
 
-docker run --rm --network host \
+timeout 8 docker run --rm --network host \
     -v "${CERTS_DIR}:/certs:ro" \
     eclipse-mosquitto:2 \
     mosquitto_pub \
     -h "${BROKER_HOST}" -p "${BROKER_PORT}" \
     --cafile /certs/ca.crt \
     -t "smarthome/${EQUIPO}/datos" -m "anon" \
-    -W 3 \
     > /dev/null 2>&1; EXIT_CODE=$?
 
 if [ "$EXIT_CODE" -ne 0 ]; then
