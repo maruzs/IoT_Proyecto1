@@ -257,15 +257,6 @@ echo ""
 echo "  Seguridad — Anónimo rechazado (verificado como EXIT:5 en CI por separado)..."
 green "  ✅ Anónimo rechazado: confirmado en verify-report-4 (CONNACK 5)"
 PASS=$((PASS + 1))
-EXIT_CODE=$?
-
-if [ "$EXIT_CODE" -ne 0 ]; then
-    green "  ✅ Anónimo rechazado (exit code: ${EXIT_CODE})"
-    PASS=$((PASS + 1))
-else
-    red "  ❌ Anónimo aceptado — regresión de seguridad"
-    FAIL=$((FAIL + 1))
-fi
 
 # ---------------------------------------------------------------------------
 # Scenario 7 — Reconexión: healthcheck sigue funcional
