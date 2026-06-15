@@ -1,5 +1,9 @@
 {
     "telegram_bot_config": {
         "token": "__TELEGRAM_BOT_TOKEN__"
+    },
+    "mqtt_broker_config": {
+        "username": "__MQTT_USER__",
+        "password": "__MQTT_PASSWORD__"
     }
 }

@@ -28,6 +28,8 @@ services:
       dockerfile: deploy/nodered/Dockerfile
       args:
         - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+        - MQTT_USER=${MQTT_USER:-equipo69}
+        - MQTT_PASSWORD=${MQTT_PASSWORD:-IoT2026Secure!}
     ports:
       - "1880:1880"
     volumes:
