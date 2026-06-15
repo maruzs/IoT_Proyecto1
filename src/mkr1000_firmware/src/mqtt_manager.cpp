@@ -17,8 +17,12 @@ static void setActuatorState(int pin, bool state) {
 void initMQTT(WiFiSSLClient& sslClient, const char* server,
               uint16_t port, const char* username,
               const char* password, const char* caCert) {
-    sslClient.setEphemeralKeyPair(true);
-    sslClient.setCACert(caCert);
+    // WiFi101 (SAMD21/MKR1000): WiFiSSLClient no expone setCACert() ni 
+    // setEphemeralKeyPair(). El canal TLS se establece pero sin verificar 
+    // el certificado del servidor. La autenticación MQTT (usuario/password) 
+    // sigue activa. Para verificar la CA hay que usar WiFi101 Firmware Updater.
+    // Parámetro caCert reservado para compatibilidad con ESP32-CAM.
+    (void)caCert;
     mqttClient.setClient(sslClient);
     mqttClient.setServer(server, port);
     mqttClient.setCallback(mqttCallback);
