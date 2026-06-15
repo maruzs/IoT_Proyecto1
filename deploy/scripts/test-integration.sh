@@ -263,6 +263,7 @@ docker run --rm --network host \
     -h "${BROKER_HOST}" -p "${BROKER_PORT}" \
     --cafile /certs/ca.crt \
     -t "smarthome/${EQUIPO}/datos" -m "anon" \
+    -W 3 \
     > /dev/null 2>&1; EXIT_CODE=$?
 
 if [ "$EXIT_CODE" -ne 0 ]; then
