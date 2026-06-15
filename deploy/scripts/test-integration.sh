@@ -257,7 +257,7 @@ echo ""
 echo "  Seguridad — Anónimo rechazado..."
 
 cd "${DEPLOY_DIR}"
-timeout 5 docker compose exec -T mosquitto mosquitto_pub \
+timeout 5 docker exec deploy-mosquitto-1 mosquitto_pub \
     -h 127.0.0.1 -p 8883 \
     --cafile /mosquitto/certs/ca.crt \
     -t "smarthome/${EQUIPO}/datos" -m "anon" \
@@ -277,7 +277,7 @@ fi
 echo ""
 echo "[5/5] Healthcheck — listener 1883 interno..."
 
-HC_OUTPUT=$(docker compose exec -T mosquitto \
+HC_OUTPUT=$(timeout 5 docker exec deploy-mosquitto-1 \
     mosquitto_sub -h 127.0.0.1 -p 1883 \
     -t '$SYS/broker/uptime' -C 1 -W 3 2>&1 || echo "FAILED")
 
