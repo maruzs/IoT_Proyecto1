@@ -1,19 +1,19 @@
 services:
   mosquitto:
-    image: eclipse-mosquitto:2
+    build:
+      context: ..
+      dockerfile: deploy/mosquitto/docker/Dockerfile
+      args:
+        - MQTT_USER=${MQTT_USER:-equipo69}
+        - MQTT_PASSWORD=${MQTT_PASSWORD:-IoT2026Secure!}
+        - MQTT_BROKER_IP=${MQTT_BROKER_IP:-127.0.0.1}
     ports:
       - "8883:8883"
     volumes:
       - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
-      - ./mosquitto/config/entrypoint.sh:/mosquitto/config/entrypoint.sh:ro
-      - ./mosquitto/certs:/mosquitto/certs:ro
-      - ./mosquitto/config/passwd:/mosquitto/config/passwd:ro
+      - mosquitto_certs:/mosquitto/certs
       - mosquitto_data:/mosquitto/data
       - mosquitto_logs:/mosquitto/log
-    entrypoint: ["/bin/sh", "/mosquitto/config/entrypoint.sh"]
-    environment:
-      - MQTT_USER=${MQTT_USER}
-      - MQTT_PASSWORD=${MQTT_PASSWORD}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "mosquitto_sub", "-h", "127.0.0.1", "-p", "1883", "-t", "$$SYS/broker/uptime", "-C", "1", "-E"]
@@ -32,7 +32,7 @@ services:
       - "1880:1880"
     volumes:
       - ./nodered/data:/data
-      - ./mosquitto/certs:/certs:ro
+      - mosquitto_certs:/certs:ro
     depends_on:
       mosquitto:
         condition: service_healthy
@@ -53,7 +53,7 @@ services:
       - "8000:8000"
     volumes:
       - ./data:/app/data
-      - ./mosquitto/certs:/certs:ro
+      - mosquitto_certs:/certs:ro
     devices:
       - /dev/video0:/dev/video0
       - /dev/video1:/dev/video1
@@ -88,5 +88,6 @@ services:
     restart: unless-stopped
 
 volumes:
+  mosquitto_certs:
   mosquitto_data:
   mosquitto_logs:
