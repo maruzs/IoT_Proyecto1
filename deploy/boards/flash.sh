@@ -84,7 +84,15 @@ while IFS='|' read -r port fqbn name; do
         FLASHED=$((FLASHED + 1))
 
     else
-        yellow "  → Placa no reconocida (${fqbn}). Omitiendo."
+        yellow "  → Placa no reconocida (${fqbn})."
+        # Fallback: si es ttyUSB, probar ESP32-CAM
+        if echo "$port" | grep -q "ttyUSB"; then
+            yellow "  → Probando ESP32-CAM como fallback..."
+            arduino-cli upload -p "$port" --fqbn esp32:esp32:esp32cam "${PROJECT_ROOT}/src/esp32cam_firmware/" 2>&1 | tail -3
+            FLASHED=$((FLASHED + 1))
+        else
+            yellow "  → Omitiendo."
+        fi
     fi
 
 done <<< "$BOARDS"
