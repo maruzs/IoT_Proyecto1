@@ -91,8 +91,7 @@ fi
 # ---------------------------------------------------------------------------
 # Fix permissions for Docker volume mounts (mosquitto runs as uid 1883:1883)
 # ---------------------------------------------------------------------------
-chmod 644 "${PASSWD_FILE}" "${CERTS_DIR}/ca.crt" "${CERTS_DIR}/server.crt"
-chmod 600 "${CERTS_DIR}/ca.key" "${CERTS_DIR}/server.key"
+chmod 644 "${PASSWD_FILE}" "${CERTS_DIR}/ca.crt" "${CERTS_DIR}/ca.key" "${CERTS_DIR}/server.crt" "${CERTS_DIR}/server.key"
 
 # ---------------------------------------------------------------------------
 # Verify outputs
