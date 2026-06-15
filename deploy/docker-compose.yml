@@ -38,6 +38,10 @@ services:
         condition: service_healthy
     environment:
       - TZ=${TZ:-America/Argentina/Buenos_Aires}
+      - MQTT_PORT=${MQTT_PORT:-8883}
+      - MQTT_USER=${MQTT_USER}
+      - MQTT_PASSWORD=${MQTT_PASSWORD}
+      - MQTT_TLS_CA=/certs/ca.crt
     restart: unless-stopped
 
   backend:
