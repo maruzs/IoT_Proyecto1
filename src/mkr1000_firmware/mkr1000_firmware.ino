@@ -4,8 +4,9 @@
 #include "src/mqtt_manager.h"
 #include "src/message_builder.h"
 #include <WiFi101.h>
+#include <WiFiSSLClient.h>
 
-WiFiClient wifiClient;
+WiFiSSLClient sslClient;
 unsigned long lastPublishTime = 0;
 
 void setup() {
@@ -14,7 +15,7 @@ void setup() {
   initActuators();
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   while (WiFi.status() != WL_CONNECTED) { delay(500); }
-  initMQTT(wifiClient, MQTT_SERVER);
+  initMQTT(sslClient, MQTT_SERVER, MQTT_PORT, MQTT_USER, MQTT_PASSWORD, CA_CERT);
 }
 
 void loop() {

@@ -7,20 +7,28 @@
 static PubSubClient mqttClient;
 static unsigned long doorLedOnTime = 0;
 static bool doorLedTimed = false;
+static const char* mqttUsername = nullptr;
+static const char* mqttPassword = nullptr;
 
 static void setActuatorState(int pin, bool state) {
     digitalWrite(pin, state ? HIGH : LOW);
 }
 
-void initMQTT(WiFiClient& wifiClient, const char* server) {
-    mqttClient.setClient(wifiClient);
-    mqttClient.setServer(server, 1883);
+void initMQTT(WiFiSSLClient& sslClient, const char* server,
+              uint16_t port, const char* username,
+              const char* password, const char* caCert) {
+    sslClient.setEphemeralKeyPair(true);
+    sslClient.setCACert(caCert);
+    mqttClient.setClient(sslClient);
+    mqttClient.setServer(server, port);
     mqttClient.setCallback(mqttCallback);
+    mqttUsername = username;
+    mqttPassword = password;
 }
 
 bool ensureConnected() {
     if (!mqttClient.connected()) {
-        if (mqttClient.connect(EQUIPO_ID)) {
+        if (mqttClient.connect(EQUIPO_ID, mqttUsername, mqttPassword)) {
             subscribeToControlTopics();
             return true;
         }
