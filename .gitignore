@@ -29,6 +29,10 @@ __pycache__/
 # Deploy artifacts — credentials and logs
 deploy/nodered/data/flows_cred.json
 deploy/mosquitto/log/
+deploy/mosquitto/certs/
+deploy/mosquitto/config/passwd
+*.key
+*.crt
 
 # Node-RED runtime — auto-generated and credential files
 deploy/nodered/data/.config.*.json
