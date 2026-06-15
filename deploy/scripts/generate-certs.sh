@@ -77,14 +77,15 @@ rm -f "${CERTS_DIR}/server.csr" "${CERTS_DIR}/ca.srl"
 # Generate Mosquitto password file
 # ---------------------------------------------------------------------------
 echo "[3/4] Generating Mosquitto password file..."
+rm -f "${PASSWD_FILE}"
 if command -v mosquitto_passwd &>/dev/null; then
-    mosquitto_passwd -b "${PASSWD_FILE}" "${MQTT_USER}" "${MQTT_PASSWORD}"
+    mosquitto_passwd -b -c "${PASSWD_FILE}" "${MQTT_USER}" "${MQTT_PASSWORD}"
 else
     echo "WARNING: mosquitto_passwd not found in PATH."
     echo "         Attempting to use Docker to generate the password file..."
     docker run --rm -v "$(dirname "${PASSWD_FILE}"):/work" \
         eclipse-mosquitto:2 \
-        mosquitto_passwd -b /work/passwd "${MQTT_USER}" "${MQTT_PASSWORD}"
+        mosquitto_passwd -b -c /work/passwd "${MQTT_USER}" "${MQTT_PASSWORD}"
 fi
 
 # ---------------------------------------------------------------------------
