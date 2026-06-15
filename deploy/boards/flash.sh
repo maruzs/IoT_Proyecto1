@@ -42,10 +42,15 @@ echo "[2/3] Detectando placas..."
 BOARDS=$(arduino-cli board list --format json 2>/dev/null | python3 -c "
 import json, sys
 data = json.load(sys.stdin)
-for b in data:
-    if b.get('boards'):
-        for board in b['boards']:
-            print(f\"{b['port']['address']}|{board.get('fqbn','')}|{board.get('name','')}\")
+for p in data.get('detected_ports', []):
+    port = p['port']['address']
+    boards = p.get('matching_boards', [])
+    if boards:
+        for b in boards:
+            print(f\"{port}|{b['fqbn']}|{b['name']}\")
+    else:
+        # Placa no identificada por arduino-cli, intentar como ESP32
+        print(f\"{port}|unknown|unknown\")
 " 2>/dev/null || echo "")
 
 if [ -z "$BOARDS" ]; then
