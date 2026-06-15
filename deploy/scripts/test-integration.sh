@@ -256,7 +256,11 @@ fi
 echo ""
 echo "  Seguridad — Anónimo rechazado..."
 
-timeout 5 bash -c "docker compose -f '${DEPLOY_DIR}/docker-compose.yml' exec -T mosquitto mosquitto_pub -h 127.0.0.1 -p 8883 --cafile /mosquitto/certs/ca.crt -t 'smarthome/${EQUIPO}/datos' -m anon" \
+cd "${DEPLOY_DIR}"
+timeout 5 docker compose exec -T mosquitto mosquitto_pub \
+    -h 127.0.0.1 -p 8883 \
+    --cafile /mosquitto/certs/ca.crt \
+    -t "smarthome/${EQUIPO}/datos" -m "anon" \
     > /dev/null 2>&1; EXIT_CODE=$?
 
 if [ "$EXIT_CODE" -ne 0 ]; then
