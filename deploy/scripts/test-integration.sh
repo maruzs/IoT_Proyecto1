@@ -256,14 +256,16 @@ fi
 echo ""
 echo "  Seguridad — Anónimo rechazado..."
 
-# Run anonymous test in a clean subshell to avoid any script context issues
-ANON_OUTPUT=$(bash -c "
-    cd '${DEPLOY_DIR}'
-    timeout 5 docker exec deploy-mosquitto-1 mosquitto_pub \
-        -h 127.0.0.1 -p 8883 \
-        --cafile /mosquitto/certs/ca.crt \
-        -t 'smarthome/${EQUIPO}/datos' -m anon 2>&1
-" 2>/dev/null)
+# Test anonymous rejection by trying to connect without credentials.
+# We use docker run with the compose network to reach the broker.
+ANON_OUTPUT=$(timeout 8 docker run --rm --network deploy_default \
+    -v "${CERTS_DIR}:/certs:ro" \
+    eclipse-mosquitto:2 \
+    mosquitto_pub \
+    -h mosquitto -p 8883 \
+    --cafile /certs/ca.crt \
+    -t "smarthome/${EQUIPO}/datos" -m "anon" 2>&1)
+EXIT_CODE=$?
 EXIT_CODE=$?
 
 if [ "$EXIT_CODE" -ne 0 ]; then
