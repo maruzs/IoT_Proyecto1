@@ -256,12 +256,10 @@ fi
 echo ""
 echo "  Seguridad — Anónimo rechazado..."
 
-timeout 8 docker run --rm --network host \
-    -v "${CERTS_DIR}:/certs:ro" \
-    eclipse-mosquitto:2 \
+docker compose -f "${DEPLOY_DIR}/docker-compose.yml" exec -T mosquitto \
     mosquitto_pub \
-    -h "${BROKER_HOST}" -p "${BROKER_PORT}" \
-    --cafile /certs/ca.crt \
+    -h 127.0.0.1 -p 8883 \
+    --cafile /mosquitto/certs/ca.crt \
     -t "smarthome/${EQUIPO}/datos" -m "anon" \
     > /dev/null 2>&1; EXIT_CODE=$?
 
