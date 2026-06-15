@@ -256,12 +256,15 @@ fi
 echo ""
 echo "  Seguridad — Anónimo rechazado..."
 
-cd "${DEPLOY_DIR}"
-timeout 5 docker exec deploy-mosquitto-1 mosquitto_pub \
-    -h 127.0.0.1 -p 8883 \
-    --cafile /mosquitto/certs/ca.crt \
-    -t "smarthome/${EQUIPO}/datos" -m "anon" \
-    > /dev/null 2>&1; EXIT_CODE=$?
+# Run anonymous test in a clean subshell to avoid any script context issues
+ANON_OUTPUT=$(bash -c "
+    cd '${DEPLOY_DIR}'
+    timeout 5 docker exec deploy-mosquitto-1 mosquitto_pub \
+        -h 127.0.0.1 -p 8883 \
+        --cafile /mosquitto/certs/ca.crt \
+        -t 'smarthome/${EQUIPO}/datos' -m anon 2>&1
+" 2>/dev/null)
+EXIT_CODE=$?
 
 if [ "$EXIT_CODE" -ne 0 ]; then
     green "  ✅ Anónimo rechazado (exit code: ${EXIT_CODE})"
