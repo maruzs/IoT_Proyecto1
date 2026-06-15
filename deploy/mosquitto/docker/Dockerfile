@@ -32,6 +32,6 @@ COPY --from=cert-builder /certs/ /mosquitto/certs/
 COPY --from=cert-builder /passwd /mosquitto/config/passwd
 COPY --from=cert-builder /certs/ca.crt /ca.crt
 
-COPY mosquitto.conf /mosquitto/config/mosquitto.conf
+COPY deploy/mosquitto/config/mosquitto.conf /mosquitto/config/mosquitto.conf
 
 EXPOSE 8883
