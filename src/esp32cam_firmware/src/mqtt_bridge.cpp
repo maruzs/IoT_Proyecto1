@@ -14,13 +14,13 @@ static PubSubClient cameraClient;
 static const char* mqttUsername = nullptr;
 static const char* mqttPassword = nullptr;
 
-void initCameraMQTT(WiFiClientSecure& secureClient, const char* server,
+void initCameraMQTT(WiFiClientSecure& client, const char* server,
                     uint16_t port, const char* username,
                     const char* password, const char* caCert) {
-    secureClient.setCACert(caCert);
-    cameraClient.setClient(secureClient);
+    client.setCACert(caCert);
+    cameraClient.setClient(client);
     cameraClient.setServer(server, port);
-    cameraClient.setBufferSize(60000);  // Necesario para imágenes JPEG (~15-30 KB)
+    cameraClient.setBufferSize(60000);
     mqttUsername = username;
     mqttPassword = password;
 }

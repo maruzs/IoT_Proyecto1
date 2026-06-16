@@ -18,7 +18,7 @@
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 
-void initCameraMQTT(WiFiClientSecure& secureClient, const char* server,
+void initCameraMQTT(WiFiClientSecure& client, const char* server,
                     uint16_t port, const char* username,
                     const char* password, const char* caCert);
 bool ensureCameraMQTTConnected();

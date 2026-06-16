@@ -9,6 +9,7 @@ services:
         - MQTT_BROKER_IP=${MQTT_BROKER_IP:-127.0.0.1}
     ports:
       - "8883:8883"
+      - "1884:1884"
     volumes:
       - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
       - mosquitto_certs:/mosquitto/certs

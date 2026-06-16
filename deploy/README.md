@@ -5,39 +5,38 @@ Docker Compose infrastructure for the SmartHome IoT project. Runs a Mosquitto MQ
 ## Prerequisites
 
 - **Docker** v24+ installed and running
-- **Docker Compose** v2+ (comes bundled with Docker Desktop; verify with `docker compose version`)
-- **OpenSSL** installed (required for certificate generation)
+- **Docker Compose** v2+ (verify with `docker compose version`)
 - Minimum **512MB RAM** available for containers
-- Ports **1880** and **8883** available on the host
+- Ports **1880**, **8883**, and **1884** available on the host
 
 ## Quick Start
 
 ```bash
-# 1. Generate TLS certificates and Mosquitto password file
-cd deploy
-export MQTT_USER=iot_user
-export MQTT_PASSWORD=change_me_before_deploy
-./scripts/generate-certs.sh
+# 1. Configurar credenciales
+cp deploy/.env.example deploy/.env
+# Editar deploy/.env con tus valores reales
 
-# 2. Start both services in the background
+# 2. Levantar servicios (certificados TLS se generan en el build)
+cd deploy
 docker compose up -d
 
-# 3. Check service status
+# 3. Verificar estado
 docker compose ps
 
-# 4. View logs
+# 4. Ver logs
 docker compose logs -f
 
-# 5. Stop services (preserves all data)
+# 5. Detener (conserva datos)
 docker compose down
 ```
 
 ## Access
 
-| Service | URL | Description |
-|---------|-----|-------------|
-| Node-RED | http://localhost:1880 | Visual flow editor and dashboard |
-| Mosquitto | mqtts://localhost:8883 | MQTT broker (TLS + auth required) |
+| Service | URL | Auth | Description |
+|---------|-----|------|-------------|
+| Node-RED | http://localhost:1880 | — | Visual flow editor y dashboard |
+| Mosquitto (TLS) | mqtts://localhost:8883 | TLS + user/password | Servicios internos (backend, Node-RED) |
+| Mosquitto (plain) | mqtt://localhost:1884 | user/password | Placas embebidas (MKR1000, ESP32-CAM) |
 
 ## Persistence
 
@@ -50,11 +49,31 @@ Two persistence strategies are used:
 
 ## Certificate Management
 
-Certificates are generated once via `generate-certs.sh` and stored in `deploy/mosquitto/certs/`:
+Los certificados TLS se generan automaticamente durante `docker compose up -d` (etapa `cert-builder` del Dockerfile multi-stage de Mosquitto). **No es necesario ejecutar `generate-certs.sh` manualmente.**
 
-- **Renewal**: Re-run `generate-certs.sh` with the same or new credentials, then restart containers with `docker compose restart`.
-- **CA changes**: If the CA certificate is regenerated, all firmware devices (MKR1000 and ESP32-CAM) must be re-flashed with the new `CA_CERT` value from `secrets.h`.
-- **Security**: Private keys (`*.key`) and the password file (`passwd`) must NEVER be committed to git. They are already listed in `.gitignore`.
+**Flujo cuando un compañero clona el repo por primera vez:**
+
+```bash
+# 1. Clonar y levantar servicios (genera certificados nuevos)
+cd deploy
+docker compose up -d
+
+# 2. Sincronizar CA cert con el firmware de la ESP32-CAM
+./scripts/sync-ca-to-firmware.sh
+
+# 3. Flashear la ESP32-CAM con el nuevo CA cert
+arduino-cli upload -p /dev/ttyUSB0 --fqbn esp32:esp32:esp32cam src/esp32cam_firmware/
+```
+
+**Cuando se regeneran los certificados** (`docker compose down && docker volume rm deploy_mosquitto_certs && docker compose up -d`):
+- Volver a ejecutar `./scripts/sync-ca-to-firmware.sh`
+- Re-flashear la ESP32-CAM
+
+> **¿Por qué?** El CA cert está embebido en `src/esp32cam_firmware/src/secrets.h`. Si el certificado del broker cambia, el firmware debe actualizarse. El script `sync-ca-to-firmware.sh` automatiza la extracción desde el volumen Docker.
+
+- **Servicios internos** (backend Python, Node-RED): usan TLS en puerto 8883 con validacion de CA.
+- **MKR1000**: usa puerto 1884 sin TLS. No necesita este paso.
+- **Seguridad**: Los certificados viven en un volumen Docker (`mosquitto_certs`), no en el repositorio. `secrets.h` está en `.gitignore`.
 
 ## Resource Requirements
 
@@ -67,15 +86,15 @@ Certificates are generated once via `generate-certs.sh` and stored in `deploy/mo
 
 ### Port already in use
 
-If port 1880 or 8883 is occupied:
+If port 1880, 8883, or 1884 is occupied:
 
 ```bash
 # Find what is using the port
 sudo lsof -i :1880
 sudo lsof -i :8883
+sudo lsof -i :1884
 
 # Or change the host port in docker-compose.yml
-# e.g., "11880:1880" to access Node-RED at http://localhost:11880
 ```
 
 ### Permission denied on bind mount
@@ -114,16 +133,65 @@ docker compose ps
 # Mosquitto should show "healthy" after ~15 seconds
 docker compose ps mosquitto
 
-# Test MQTT connection over TLS with credentials (requires mosquitto-clients)
-mosquitto_pub -h localhost -p 8883 \
-  --cafile deploy/mosquitto/certs/ca.crt \
-  -u iot_user -P change_me_before_deploy \
+# Test MQTT TLS (servicios internos, puerto 8883)
+docker run --rm --network host -v deploy_mosquitto_certs:/certs:ro \
+  eclipse-mosquitto:2 mosquitto_pub -h localhost -p 8883 \
+  --cafile /certs/ca.crt -u iot_user -P change_me_before_deploy \
+  -t "test/topic" -m "hello"
+
+# Test MQTT plain (placas, puerto 1884)
+docker run --rm --network host eclipse-mosquitto:2 mosquitto_pub \
+  -h localhost -p 1884 -u iot_user -P change_me_before_deploy \
   -t "test/topic" -m "hello"
 
 # Test Node-RED HTTP endpoint
 curl -s -o /dev/null -w "%{http_code}" http://localhost:1880
 # Expected: 200 or 302
 ```
+
+## Firmware Deployment (Placas)
+
+Las placas NO usan TLS. Solo necesitan WiFi + credenciales MQTT.
+
+### 1. Configurar credenciales
+
+```bash
+# Crear secrets.h desde el template para cada placa
+cp src/mkr1000_firmware/src/secrets.h.example src/mkr1000_firmware/src/secrets.h
+cp src/esp32cam_firmware/src/secrets.h.example src/esp32cam_firmware/src/secrets.h
+
+# Editar ambos secrets.h con WiFi y MQTT reales:
+#   WIFI_SSID, WIFI_PASSWORD, MQTT_SERVER, MQTT_USER, MQTT_PASSWORD
+#   MQTT_PORT debe ser 1884 (sin TLS)
+```
+
+### 2. Compilar y flashear
+
+```bash
+# MKR1000
+arduino-cli compile --fqbn arduino:samd:mkr1000 src/mkr1000_firmware/
+arduino-cli upload -p /dev/ttyACM0 --fqbn arduino:samd:mkr1000 src/mkr1000_firmware/
+
+# ESP32-CAM
+arduino-cli compile --fqbn esp32:esp32:esp32cam src/esp32cam_firmware/
+arduino-cli upload -p /dev/ttyUSB0 --fqbn esp32:esp32:esp32cam src/esp32cam_firmware/
+```
+
+### 3. Verificar conexion
+
+```bash
+# Datos del MKR1000 (publica cada 2 segundos)
+docker run --rm --network host eclipse-mosquitto:2 mosquitto_sub \
+  -h IP_DEL_BROKER -p 1884 -u iot_user -P tu_password \
+  -t 'smarthome/equipo69/datos' -C 2 -W 10
+
+# Evento de camara del ESP32-CAM
+docker run --rm --network host eclipse-mosquitto:2 mosquitto_sub \
+  -h IP_DEL_BROKER -p 1884 -u iot_user -P tu_password \
+  -t 'smarthome/equipo69/camara/evento' -C 1 -W 10
+```
+
+> **NOTA**: Si rotas credenciales MQTT, solo cambia `MQTT_USER`/`MQTT_PASSWORD` en `secrets.h` y re-flashea. No necesitas tocar certificados.
 
 ## Pre-installed Node-RED Nodes
 
