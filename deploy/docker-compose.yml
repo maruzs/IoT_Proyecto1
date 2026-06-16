@@ -2,14 +2,17 @@ services:
   mosquitto:
     image: eclipse-mosquitto:2
     ports:
-      - "1883:1883"
+      - "8883:8883"
+      - "1884:1884"
     volumes:
       - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./mosquitto/certs:/mosquitto/certs:ro
+      - ./mosquitto/config/passwd:/mosquitto/config/passwd:ro
       - mosquitto_data:/mosquitto/data
       - mosquitto_logs:/mosquitto/log
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "mosquitto_sub", "-t", "$$SYS/broker/uptime", "-C", "1", "-E"]
+      test: ["CMD", "mosquitto_sub", "-t", "$$SYS/broker/uptime", "-p", "1883", "-C", "1", "-E"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -80,6 +83,33 @@ services:
       - ollama_data:/root/.ollama
     environment:
       - OLLAMA_MODEL=${OLLAMA_MODEL:-phi3:mini}
+    restart: unless-stopped
+
+  llm-gateway:
+    build:
+      context: ..
+      dockerfile: deploy/llm-gateway/Dockerfile
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./mosquitto/certs/ca.crt:/certs/ca.crt:ro
+    environment:
+      - OLLAMA_URL=${OLLAMA_URL:-http://ollama:11434}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-phi3:mini}
+      - OLLAMA_TIMEOUT=${OLLAMA_TIMEOUT:-30}
+      - MAX_RETRIES=${MAX_RETRIES:-3}
+      - MQTT_BROKER=${MQTT_BROKER:-mosquitto}
+      - MQTT_PORT=${MQTT_PORT:-8883}
+      - MQTT_USER=${MQTT_USER:-equipo69}
+      - MQTT_PASS=${MQTT_PASS:-}
+      - MQTT_TLS=${MQTT_TLS:-true}
+      - MQTT_CA_CERT=${MQTT_CA_CERT:-/certs/ca.crt}
+      - EQUIPO_ID=${EQUIPO_ID:-equipo69}
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+      ollama:
+        condition: service_started
     restart: unless-stopped
 
 volumes:

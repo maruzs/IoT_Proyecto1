@@ -69,10 +69,14 @@ Escenario: Sensor solo publica datos, no comandos
   Cuando publica en smarthome/equipo69/datos
   Entonces la publicación es aceptada
 
-Escenario: LLM Gateway publica comandos y recibe datos
+Escenario: LLM Gateway publica decisiones y recibe datos
   Dado que el cliente "llm-gateway" tiene ACL configurada
-  Cuando publica en smarthome/equipo69/control/led
+  Cuando publica en smarthome/equipo69/llm/decision
   Entonces la publicación es aceptada
+  Cuando publica en smarthome/equipo69/llm/respuesta
+  Entonces la publicación es aceptada
+  Cuando intenta publicar en smarthome/equipo69/control/led
+  Entonces la publicación es rechazada por el broker
   Cuando se suscribe a smarthome/equipo69/datos
   Entonces la suscripción es aceptada
 ```
@@ -228,23 +232,24 @@ Escenario: Ollama responde prompt de control domótico
 **Dependencias:** T-001, T-006
 
 #### Contexto
-El LLM Gateway es el servicio central que orquesta la comunicación con Ollama. Recibe triggers (vía REST desde Node-RED, por timer interno del agente LangGraph, o por eventos MQTT), construye prompts con contexto de sensores, llama a Ollama, valida la respuesta JSON, y publica comandos MQTT. Separa la lógica de razonamiento del flow de Node-RED.
+El LLM Gateway es el servicio central que orquesta la comunicación con Ollama. Recibe triggers vía REST desde Node-RED (el dashboard envía el contexto de sensores), construye prompts con ese contexto, llama a Ollama, valida la respuesta JSON, y publica la decisión en MQTT para que Node-RED la ejecute. Node-RED actúa como gatekeeper: solo ejecuta las acciones que están predefinidas en sus flows. El gateway NUNCA publica directamente a tópicos de control de actuadores — eso es responsabilidad exclusiva de Node-RED.
 
 #### Descripción
-Microservicio FastAPI con endpoints REST (`POST /llm/decide`, `POST /llm/query`) y cliente MQTT interno para publicar comandos. Incluye: prompt builder que inyecta estado actual del hogar, llamada a Ollama con timeout y reintentos, validador de respuesta JSON con fallback, y publicación MQTT con TLS.
+Microservicio FastAPI con endpoints REST (`POST /llm/decide`, `POST /llm/query`) y cliente MQTT interno para publicar decisiones y estados de error. Incluye: prompt builder que inyecta estado actual del hogar, llamada a Ollama con `"format": "json"` y timeout con reintentos, validador de respuesta JSON con fallback, y publicación MQTT con TLS. Node-RED se suscribe a `llm/decision` para ejecutar las acciones decididas por el LLM.
 
 #### Criterios de Aceptación
 
 ```gherkin
-Escenario: Gateway recibe trigger y publica comandos
+Escenario: Gateway recibe trigger de Node-RED y publica decisión
   Dado que el LLM Gateway Service está corriendo
-  Y Ollama está disponible en 172.17.0.1:11434
-  Y el broker MQTT seguro está accesible
-  Cuando se envía POST /llm/decide con el estado actual de sensores
+  Y Ollama está disponible en ollama:11434 (servicio Docker)
+  Y el broker MQTT seguro está accesible en mosquitto:8883
+  Cuando Node-RED envía POST /llm/decide con el estado actual de sensores
   Entonces el servicio construye un prompt con ese contexto
   Y llama a Ollama con "format": "json"
   Y parsea la respuesta JSON
-  Y publica los comandos en smarthome/equipo69/control/led y smarthome/equipo69/llm/decision
+  Y publica la decisión en smarthome/equipo69/llm/decision
+  Y Node-RED (suscrito a ese tópico) ejecuta las acciones correspondientes
 
 Escenario: Gateway maneja respuesta JSON inválida de Ollama
   Dado que el LLM Gateway recibe una respuesta de Ollama
@@ -258,44 +263,44 @@ Escenario: Gateway maneja timeout de Ollama
   Cuando el LLM Gateway envía la solicitud
   Entonces cancela la llamada después del timeout
   Y devuelve HTTP 504 al caller
-  Y NO publica comandos MQTT incorrectos
+  Y NO publica decisiones MQTT incorrectas
 ```
 
 ---
 
-### T-008: MCP Tools para LLM Gateway
+### T-008: MCP Server en Node-RED — Tools para LangGraph
 
 **Tipo:** Historia Técnica
 **Prioridad:** 🔴 Alta
 **Unidad:** 2
-**Servicio:** LLM Gateway Service
+**Servicio:** Node-RED MCP Server
 **Dependencias:** T-007, T-015 (Digital Twin)
 
 #### Contexto
-Para que LangGraph y el agente autónomo funcionen correctamente, el LLM Gateway debe exponer tools vía MCP (Model Context Protocol). Estas tools permiten al LLM consultar estado de sensores, activar actuadores, y enviar notificaciones sin que el prompt tenga que contener toda la lógica.
+Para que LangGraph y el agente autónomo (T-009) funcionen correctamente, Node-RED debe exponer tools vía MCP (Model Context Protocol). El agente LangGraph corre dentro del LLM Gateway como cliente MCP y consulta estas tools para interactuar con el hogar. Node-RED es el gatekeeper: centraliza todas las acciones físicas (activar actuadores, consultar sensores, enviar notificaciones), limitando al LLM a las acciones predefinidas en los flows. El LLM NUNCA publica directamente a tópicos de control — siempre pasa por Node-RED.
 
 #### Descripción
-Implementar un servidor MCP dentro del LLM Gateway que exponga las siguientes tools: `get_sensor_state`, `activate_actuator`, `send_notification`, `adjust_threshold`, `query_history`. Cada tool ejecuta acciones concretas (leer Digital Twin, publicar MQTT, llamar Alert Manager).
+Implementar un servidor MCP dentro de Node-RED (usando `node-red-contrib-mcp` o un nodo HTTP personalizado) que exponga las siguientes tools: `get_sensor_state`, `activate_actuator`, `send_notification`, `adjust_threshold`, `query_history`. Cada tool ejecuta acciones concretas dentro de Node-RED: leer del Digital Twin, publicar MQTT a tópicos de control, llamar al Alert Manager.
 
 #### Criterios de Aceptación
 
 ```gherkin
-Escenario: Tool get_sensor_state retorna estado actual
-  Dado que el MCP server está corriendo en el LLM Gateway
+Escenario: Tool get_sensor_state retorna estado actual desde Digital Twin
+  Dado que el MCP server está corriendo en Node-RED
   Y el Digital Twin Service tiene datos actualizados
-  Cuando se invoca la tool "get_sensor_state" con parámetro sensor="temperatura"
-  Entonces retorna el valor actual de temperatura desde el Digital Twin
-  Y el tiempo de respuesta es menor a 200ms
+  Cuando LangGraph (cliente MCP) invoca la tool "get_sensor_state" con parámetro sensor="temperatura"
+  Entonces Node-RED consulta al Digital Twin y retorna el valor actual
+  Y el tiempo de respuesta es menor a 500ms
 
-Escenario: Tool activate_actuator publica en MQTT
-  Dado que la tool activate_actuator está registrada
-  Cuando se invoca con parámetros dispositivo="led", estado=true
-  Entonces el LLM Gateway publica {"estado": true} en smarthome/equipo69/control/led
-  Y retorna confirmación de publicación exitosa
+Escenario: Tool activate_actuator publica en MQTT desde Node-RED
+  Dado que la tool activate_actuator está registrada en el MCP server de Node-RED
+  Cuando LangGraph invoca con parámetros dispositivo="led", estado=true
+  Entonces Node-RED publica {"estado": true} en smarthome/equipo69/control/led
+  Y retorna confirmación de publicación exitosa al cliente MCP
 
-Escenario: Tools disponibles en el endpoint MCP
-  Dado que el servidor MCP está corriendo
-  Cuando un cliente consulta el endpoint de tools disponibles
+Escenario: Tools disponibles en el endpoint MCP de Node-RED
+  Dado que el servidor MCP está corriendo en Node-RED
+  Cuando un cliente MCP (LangGraph) consulta el endpoint de tools disponibles
   Entonces la respuesta lista al menos: get_sensor_state, activate_actuator, send_notification, adjust_threshold, query_history
   Y cada tool tiene descripción, parámetros y tipos documentados
 ```
@@ -311,7 +316,7 @@ Escenario: Tools disponibles en el endpoint MCP
 **Dependencias:** T-007, T-008
 
 #### Descripción
-**Como** residente del hogar inteligente, **quiero** que el sistema tome decisiones contextuales basadas en todos los sensores y las ejecute automáticamente, **para** no tener que programar reglas if/else manuales para cada situación posible.
+**Como** residente del hogar inteligente, **quiero** que el sistema tome decisiones contextuales basadas en todos los sensores y las ejecute automáticamente, **para** no tener que programar reglas if/else manuales para cada situación posible. El agente LangGraph corre dentro del LLM Gateway y usa las tools MCP expuestas por Node-RED (T-008) para interactuar con el hogar. Node-RED es el único que publica a tópicos de control de actuadores; LangGraph solo invoca tools y publica el razonamiento en `llm/decision`.
 
 #### Criterios de Aceptación
 
@@ -323,9 +328,10 @@ Escenario: Alerta crítica nocturna con gas elevado
   Y la cámara NO detecta una persona conocida
   Cuando el LangGraph Agent recibe el estado completo del hogar
   Entonces el LLM clasifica la alerta como "critico"
-  Y el agente decide activar el LED de alerta
-  Y el agente decide activar el buzzer
-  Y el agente publica un mensaje de alerta en smarthome/equipo69/llm/decision
+  Y el agente invoca la tool MCP activate_actuator(led, true)
+  Y el agente invoca la tool MCP activate_actuator(buzzer, true)
+  Y Node-RED ejecuta las acciones y publica en smarthome/equipo69/control/led y smarthome/equipo69/control/buzzer
+  Y el agente publica el razonamiento en smarthome/equipo69/llm/decision
   Y el razonamiento explica por qué la situación es crítica
 
 Escenario: Estado normal sin acciones necesarias
