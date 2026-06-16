@@ -90,7 +90,20 @@ services:
       - backend
     restart: unless-stopped
 
+  ollama:
+    build:
+      context: ..
+      dockerfile: deploy/ollama/Dockerfile
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-phi3:mini}
+    restart: unless-stopped
+
 volumes:
   mosquitto_certs:
   mosquitto_data:
   mosquitto_logs:
+  ollama_data:
