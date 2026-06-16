@@ -25,13 +25,15 @@ actuadores vía MQTT a través de un broker Mosquitto.
 │ MKR1000      │     │ ESP32-CAM    │     
 │ sensores +   │     │ cámara       │     
 │ actuadores   │     │ snapshot     │     
+│ :1884 plain  │     │ :8883 TLS 🔐 │     
 └──────┬───────┘     └──────┬───────┘     
        │ MQTT               │ MQTT                
        │                    │                    
        ▼                    ▼                    
 ┌──────────────────────────────────────────────────────┐
 │                    Mosquitto                         │
-│                  broker MQTT :1883                   │
+│          :8883 TLS + auth  │  :1884 plain + auth    │
+│          :1883 healthcheck (localhost)               │
 └──────┬───────────────────────┬───────────────────────┘
        │                       │
        ▼                       ▼
@@ -39,7 +41,7 @@ actuadores vía MQTT a través de un broker Mosquitto.
 │  Node-RED    │     │  Backend FastAPI │           │ Navegador    │
 │  dashboard   │     │  face_recognition│           │ (frontend)   │
 │  reglas      │     │  API REST :8000  │<----------│              │
-│  Telegram    │     │  cliente MQTT    │  HTTP :80 └──────────────┘
+│  Telegram    │     │  cliente MQTT 🔐 │  HTTP :80 └──────────────┘
 │  histórico   │     │                  │
 └──────────────┘     └──────────────────┘
 ```
@@ -50,7 +52,7 @@ actuadores vía MQTT a través de un broker Mosquitto.
 |---|---|---|
 | **Arduino MKR1000** | Nodo sensor / actuador | Lee SHT30 (temp/humedad), MQ-2 (gas), MAX4466 (sonido). Controla LED alerta y LED puerta. Publica JSON de sensores cada 2s y recibe comandos ON/OFF por MQTT. |
 | **ESP32-CAM** | Cámara bajo demanda | Recibe comandos MQTT (`camara/captura`) y captura frames en ráfaga (~4 fps durante 5s). Sin stream MJPEG — cada JPEG se publica vía MQTT. |
-| **Mosquitto** | Broker MQTT | Punto central de comunicación. Sin TLS ni autenticación (prototipo). Puerto 1883. |
+| **Mosquitto** | Broker MQTT seguro | Punto central de comunicación. Puerto 8883 con TLS + autenticación para servicios internos (backend, Node-RED, ESP32-CAM). Puerto 1884 sin TLS para MKR1000 (WiFi101 no compatible con TLS moderno). Healthcheck en 1883 (localhost). Certificados autofirmados generados en el build de Docker. |
 | **Node-RED** | Dashboard + reglas + notificaciones | Dashboard web con variables, gráfico histórico y controles. Reglas automáticas (temperatura alta, gas alto). Bot de Telegram con comandos `/status` y `/ayuda`. Registro histórico en CSV. |
 | **Backend FastAPI** | API REST + reconocimiento facial | Corre `face_recognition` (dlib). Captura bursts de 10s, detecta rostros conocidos, abre puerta si hay match, se puede guarda los rostros enrolados en una base de datos SQLite. Publica eventos vía MQTT. |
 | **Frontend HTML/JS** | Interfaz de control | Servido por nginx (:80), consume la API vía polling. Muestra cámara en vivo (MJPEG relay), historial de accesos y enrolamiento de rostros desconocidos. |
@@ -96,12 +98,20 @@ Esto levanta 4 contenedores:
 
 | Servicio | Puerto | Descripción |
 |---|---|---|
-| `mosquitto` | 1883 | Broker MQTT |
+| `mosquitto` | 8883 (TLS), 1884 (plain), 1883 (health) | Broker MQTT seguro |
 | `nodered` | 1880 | Dashboard + reglas + Telegram |
 | `backend` | 8000 | API REST + face recognition |
 | `frontend` | 80 | Interfaz web |
 
-### 4. Verificar
+### 4. Sincronizar CA cert con el firmware ESP32-CAM
+
+```bash
+./scripts/sync-ca-to-firmware.sh
+```
+
+> **¿Por qué?** El certificado CA autofirmado se genera durante `docker compose up`. La ESP32-CAM necesita ese CA cert embebido en su firmware para validar la conexión TLS. Este script lo extrae del volumen Docker y actualiza `src/esp32cam_firmware/src/secrets.h`.
+
+### 5. Verificar
 
 ```bash
 docker compose ps          # todos deben decir "running"
@@ -172,6 +182,13 @@ Ejemplo:
 | `smarthome/equipo69/acceso/estado` | `{"estado":"permitido","usuario":"Juan"}` o `{"estado":"denegado","usuario":"desconocido"}` |
 | `smarthome/equipo69/acceso/enrolar` | `{"accion":"enrolar","timestamp":"..."}` |
 
+### LLM (Unidad 2) — LLM Gateway ↔ broker
+
+| Tópico | Dirección | Payload |
+|---|---|---|
+| `smarthome/equipo69/llm/decision` | LLM Gateway → broker | `{"nivel":"critico","razonamiento":"Gas elevado..."}` |
+| `smarthome/equipo69/llm/respuesta` | LLM Gateway → broker | Respuesta en lenguaje natural a consultas del dashboard |
+
 ### QoS por tipo de mensaje
 
 | Tipo | QoS | Retain |
@@ -213,48 +230,67 @@ Base: `http://localhost:8000/api` (o `http://localhost/api` a través de nginx).
 
 ## Flashear firmware
 
-### MKR1000
+### Requisitos previos
 
 ```bash
-arduino-cli compile \
-  --fqbn arduino:samd:mkr1000 \
-  src/mkr1000_firmware
+# 1. Levantar servicios (genera certificados TLS)
+cd deploy && docker compose up -d
 
-arduino-cli upload \
-  --fqbn arduino:samd:mkr1000 \
-  -p /dev/ttyACM0 \
-  src/mkr1000_firmware
+# 2. Sincronizar CA cert → firmware ESP32-CAM
+./scripts/sync-ca-to-firmware.sh
+
+# 3. Crear secrets.h desde el template para cada placa
+cp src/mkr1000_firmware/src/secrets.h.example src/mkr1000_firmware/src/secrets.h
+cp src/esp32cam_firmware/src/secrets.h.example src/esp32cam_firmware/src/secrets.h
+# Editar WiFi y MQTT en cada secrets.h
 ```
 
-### ESP32-CAM
+### MKR1000 (no TLS, puerto 1884)
 
 ```bash
-arduino-cli compile \
-  --fqbn esp32:esp32:ai_thinker \
-  src/esp32cam_firmware
-
-arduino-cli upload \
-  --fqbn esp32:esp32:ai_thinker \
-  -p /dev/ttyUSB0 \
-  src/esp32cam_firmware
+arduino-cli compile --fqbn arduino:samd:mkr1000 src/mkr1000_firmware
+arduino-cli upload -p /dev/ttyACM0 --fqbn arduino:samd:mkr1000 src/mkr1000_firmware
 ```
+
+> **Nota:** El MKR1000 usa conexión sin TLS porque su chip WiFi (ATWINC1500) no es compatible con OpenSSL 3.x. La autenticación por usuario/contraseña sigue activa.
+
+### ESP32-CAM (TLS, puerto 8883 🔐)
+
+```bash
+arduino-cli compile --fqbn esp32:esp32:esp32cam src/esp32cam_firmware
+arduino-cli upload -p /dev/ttyUSB0 --fqbn esp32:esp32:esp32cam src/esp32cam_firmware
+```
+
+> **Importante:** La ESP32-CAM usa TLS 1.2 con `WiFiClientSecure` + `setCACert()`. Necesita NTP para sincronizar el reloj y validar la fecha del certificado. La salida serial puede no verse (pines UART compartidos con la cámara) — verificá la conexión en los logs del broker:
+> ```bash
+> docker exec deploy-mosquitto-1 cat /mosquitto/log/mosquitto.log | grep "equipo69-cam"
+> ```
 
 ### Archivos de secretos
 
-Ambos firmware leen credenciales desde un archivo `src/<placa>_firmware/src/secrets.h` que **no se sube al repo** (está en `.gitignore`). Usá los templates `.example`:
+Ambos firmware leen credenciales desde `src/<placa>_firmware/src/secrets.h` que **no se sube al repo** (está en `.gitignore`). Usá los templates `.example`:
 
 ```bash
 cp src/mkr1000_firmware/src/secrets.h.example src/mkr1000_firmware/src/secrets.h
 cp src/esp32cam_firmware/src/secrets.h.example src/esp32cam_firmware/src/secrets.h
 ```
 
-Editá cada `secrets.h` con tus credenciales WiFi y la IP del broker MQTT:
+Editá cada `secrets.h`:
 
 ```cpp
+// WiFi
 #define WIFI_SSID "tu_red_wifi"
 #define WIFI_PASSWORD "tu_password"
-#define MQTT_SERVER "192.168.1.X"   // IP de la máquina que corre Docker
+
+// MQTT
+#define MQTT_SERVER "10.167.230.179"    // IP de la máquina que corre Docker
+#define MQTT_PORT 1884                   // MKR1000: 1884 (plain)
+// #define MQTT_PORT 8883               // ESP32-CAM: 8883 (TLS)
+#define MQTT_USER "equipo69"
+#define MQTT_PASSWORD "IoT2026Secure!"
 ```
+
+> **ESP32-CAM:** El CA cert se inserta automáticamente en `secrets.h` al ejecutar `deploy/scripts/sync-ca-to-firmware.sh`. No lo edites a mano — usa el script.
 
 ### Cambiar pines
 
@@ -488,7 +524,8 @@ graph TD
 
 | Fase | Issues | Dependencia clave |
 |------|--------|-------------------|
-| 🔴 **Infraestructura segura** | #5, #6, #7, #10 | Ninguna — arranque inmediato |
+| ✅ **Infraestructura segura** | ~~#5~~ (completado), #6, #7, #10 | #5 listo — MQTT TLS + auth funcionando |
+| 🟡 **CoAP** | #8, #9 | MQTT seguro listo |
 | 🟡 **CoAP** | #8, #9 | MQTT seguro listo |
 | 🔴 **LLM Gateway + LangGraph U2** | #11, #12, #13 | Ollama + MQTT seguro |
 | 🟡 **Node-RED + NL Query** | #14, #15 | LLM Gateway respondiendo |
