@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 class MQTTClient:
-    """paho-mqtt client with reconnect logic.
+    """paho-mqtt client with reconnect logic and TLS authentication.
 
     This is the ONLY place in the codebase that creates an MQTT connection.
     """
@@ -16,15 +16,19 @@ class MQTTClient:
     def __init__(
         self,
         broker_host: str = "mosquitto",
-        broker_port: int = 1883,
+        broker_port: int = 8883,
         equipo_id: str = "equipo69",
     ) -> None:
         self.broker_host = os.environ.get("MQTT_BROKER", broker_host)
-        self.broker_port = broker_port
+        self.broker_port = int(os.environ.get("MQTT_PORT", broker_port))
         self.equipo_id = os.environ.get("EQUIPO_ID", equipo_id)
         self.topic_base = f"smarthome/{self.equipo_id}"
         self._url_callback = None
         self._frame_callback = None
+
+        mqtt_user = os.environ.get("MQTT_USER")
+        mqtt_password = os.environ.get("MQTT_PASSWORD")
+        ca_cert_path = os.environ.get("MQTT_TLS_CA")
 
         # paho-mqtt v1 / v2 compatibility
         try:
@@ -34,6 +38,18 @@ class MQTTClient:
                 mqtt.CallbackAPIVersion.VERSION1,
                 client_id=f"backend-{self.equipo_id}",
             )
+
+        # TLS setup
+        if ca_cert_path:
+            self.client.tls_set(ca_certs=ca_cert_path)
+        else:
+            logger.warning("MQTT_TLS_CA not set — TLS will not be used")
+
+        # Authentication
+        if mqtt_user and mqtt_password:
+            self.client.username_pw_set(username=mqtt_user, password=mqtt_password)
+        else:
+            logger.warning("MQTT_USER or MQTT_PASSWORD not set — broker may reject connection")
 
         # Built-in exponential backoff reconnect: 1s -> 2s -> 4s -> ... 30s
         self.client.reconnect_delay_set(min_delay=1, max_delay=30)
