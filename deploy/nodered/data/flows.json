@@ -254,7 +254,8 @@
                 "ui_gauge_gas"
             ],
             [
-                "ui_text_sound"
+                "ui_text_sound",
+                "sound_trigger"
             ]
         ]
     },
@@ -498,7 +499,7 @@
         "type": "mqtt out",
         "z": "f6f2187d.f17ca8",
         "name": "Publicar control LED",
-        "topic": "smarthome/equipoXX/control/led",
+        "topic": "smarthome/equipo69/control/led",
         "qos": "0",
         "retain": "false",
         "respTopic": "",
@@ -515,7 +516,7 @@
         "type": "mqtt out",
         "z": "f6f2187d.f17ca8",
         "name": "Publicar control Buzzer",
-        "topic": "smarthome/equipoXX/control/buzzer",
+        "topic": "smarthome/equipo69/control/buzzer",
         "qos": "0",
         "retain": "false",
         "respTopic": "",
@@ -703,10 +704,10 @@
         "type": "function",
         "z": "f6f2187d.f17ca8",
         "name": "Reglas de Control Autom\u00e1tico",
-        "func": "var temp = msg.payload.temperatura;\nvar gas = msg.payload.gas;\nvar alertTriggered = false;\nvar alertMsg = \"\";\n\nif (temp && temp > 30) {\n    alertTriggered = true;\n    alertMsg += \"\u26a0\ufe0f \u00a1Temperatura cr\u00edtica: \" + temp + \"\u00b0C!\\n\";\n}\n\nif (gas && gas > 1020) {\n    alertTriggered = true;\n    alertMsg += \"\ud83d\udd25 \u00a1Alerta de Gas detectada: \" + gas + \" ppm!\\n\";\n}\n\nif (alertTriggered) {\n    var telegramMsg = {\n        payload: {\n            chatId: -1003906928304,\n            type: \"message\",\n            content: \"\ud83d\udea8 *[SmartHome ALERTA]*\\n\\n\" + alertMsg + \"\\n*Timestamp:* \" + new Date().toLocaleString()\n        }\n    };\n    \n    return [\n        { payload: \"ON\", topic: \"control/led\" },\n        { payload: \"ON\", topic: \"control/buzzer\" },\n        telegramMsg\n    ];\n} else {\n    return [\n        null,\n        null,\n        null\n    ];\n}",
-        "outputs": 3,
-        "noerr": 0,
-        "initialize": "",
+"func": "var temp = msg.payload.temperatura;\nvar gas = msg.payload.gas;\nvar alertTriggered = false;\nvar alertMsg = \"\";\n\nif (temp && temp > 30) {\n    alertTriggered = true;\n    alertMsg += \"\u26a0\ufe0f \u00a1Temperatura cr\u00edtica: \" + temp + \"\u00b0C!\\n\";\n}\n\nif (gas && gas > 1020) {\n    alertTriggered = true;\n    alertMsg += \"\ud83d\udd25 \u00a1Alerta de Gas detectada: \" + gas + \" ppm!\\n\";\n}\n\nif (alertTriggered) {\n    context.set(\"normal_count\", 0);\n    var telegramMsg = {\n        payload: {\n            chatId: -1003906928304,\n            type: \"message\",\n            content: \"\ud83d\udea8 *[SmartHome ALERTA]*\\n\\n\" + alertMsg + \"\\n*Timestamp:* \" + new Date().toLocaleString()\n        }\n    };\n    return [\n        { payload: \"ON\" },\n        telegramMsg\n    ];\n} else {\n    var count = (context.get(\"normal_count\") || 0) + 1;\n    context.set(\"normal_count\", count);\n    if (count >= 3) {\n        context.set(\"normal_count\", 0);\n        return [\n            { payload: \"OFF\" },\n            null\n        ];\n    }\n    return [null, null];\n}",
+"outputs": 2,
+"noerr": 0,
+"initialize": "context.set('normal_count', 0);",
         "finalize": "",
         "libs": [],
         "x": 390,
@@ -714,9 +715,6 @@
         "wires": [
             [
                 "mqtt_out_led"
-            ],
-            [
-                "mqtt_out_buzzer"
             ],
             [
                 "telegram_out"
@@ -760,8 +758,7 @@
                 "debug_router_out"
             ],
             [
-                "mqtt_out_led",
-                "mqtt_out_buzzer"
+                "mqtt_out_led"
             ]
         ]
     },
@@ -820,5 +817,41 @@
                 "telegram_out"
             ]
         ]
+    },
+    {
+        "id": "sound_trigger",
+        "type": "function",
+        "z": "f6f2187d.f17ca8",
+        "name": "Trigger Sonido → Cámara",
+        "func": "var sound = msg.payload;\nvar threshold = 120;\n\nif (sound !== undefined && sound > threshold) {\n    node.warn(\"Sonido \" + sound + \" > \" + threshold + \" — disparando captura\");\n    return {\n        payload: {\"accion\": \"iniciar_burst\", \"duracion\": 5}\n    };\n}\nreturn null;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "context.set('sound_threshold', 120);",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 300,
+        "wires": [
+            [
+                "mqtt_out_camara_captura"
+            ]
+        ]
+    },
+    {
+        "id": "mqtt_out_camara_captura",
+        "type": "mqtt out",
+        "z": "f6f2187d.f17ca8",
+        "name": "Publicar camara/captura",
+        "topic": "smarthome/equipo69/camara/captura",
+        "qos": "0",
+        "retain": "false",
+        "respTopic": "",
+        "contentType": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "mqtt_broker_config",
+        "x": 630,
+        "y": 300,
+        "wires": []
     }
 ]
