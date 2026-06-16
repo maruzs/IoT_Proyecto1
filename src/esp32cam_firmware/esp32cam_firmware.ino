@@ -6,9 +6,32 @@
 #include "src/mqtt_bridge.h"
 #include "src/burst_capture.h"
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
+#include <time.h>
 #include "Arduino.h"
 
-WiFiClient wifiClient;
+WiFiClientSecure secureClient;
+
+// NTP: Argentina GMT-3
+static const long GMT_OFFSET_SEC = -3 * 3600;
+static const int  DAYLIGHT_OFFSET_SEC = 0;
+
+static bool syncNTP() {
+    configTime(GMT_OFFSET_SEC, DAYLIGHT_OFFSET_SEC, "pool.ntp.org", "time.nist.gov");
+    Serial.print("NTP sync");
+    struct tm timeinfo;
+    int retries = 20;
+    while (!getLocalTime(&timeinfo) && retries-- > 0) {
+        delay(500);
+        Serial.print(".");
+    }
+    if (retries <= 0) {
+        Serial.println(" FALLO");
+        return false;
+    }
+    Serial.println(" OK");
+    return true;
+}
 
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
     char msg[128] = {0};
@@ -24,30 +47,48 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 
 void setup() {
     Serial.begin(115200);
+    Serial.println();  // blank line after bootloader noise
+    Serial.println("ESP32-CAM boot");
+    
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
         Serial.print(".");
     }
     Serial.println("\nWiFi OK");
-    Serial.print("Camara lista! IP: http://");
-    Serial.println(WiFi.localIP());
-    if (!initCamera()) { Serial.println("Camara fallo"); return; }
-    // Modo snapshot: sin stream MJPEG. Imágenes solo bajo demanda vía MQTT.
-    delay(500);  // Pequeña pausa post-WiFi para estabilizar
-    initCameraMQTT(wifiClient, MQTT_SERVER);
-    Serial.print("Conectando MQTT a "); Serial.print(MQTT_SERVER); Serial.print("... ");
+    Serial.print("IP: "); Serial.println(WiFi.localIP());
+    
+    // NTP: obligatorio para validar fecha del certificado TLS
+    if (!syncNTP()) {
+        Serial.println("WARN: NTP fallo, TLS puede fallar por fecha invalida");
+    }
+    
+    if (!initCamera()) {
+        Serial.println("ERROR: initCamera fallo");
+        return;
+    }
+    Serial.println("Camara OK");
+    
+    delay(500);
+    Serial.print("MQTT TLS -> "); Serial.print(MQTT_SERVER); Serial.print(":"); Serial.print(MQTT_PORT); Serial.print("... ");
+    initCameraMQTT(secureClient, MQTT_SERVER, MQTT_PORT, MQTT_USER, MQTT_PASSWORD, CA_CERT);
+    
     if (ensureCameraMQTTConnected()) {
-        Serial.println("OK");
+        Serial.println("CONECTADO");
     } else {
         Serial.println("FALLO");
+        return;
     }
     subscribeToCameraControl(mqttCallback);
     publishCameraEvent("camara_lista");
+    Serial.println("Listo.");
 }
 
 void loop() {
-    if (!isCameraMQTTConnected()) ensureCameraMQTTConnected();
+    if (!isCameraMQTTConnected()) {
+        Serial.println("MQTT desconectado, reconectando...");
+        ensureCameraMQTTConnected();
+    }
     mqttLoop();
     checkBurstTimeout();
     delay(MQTT_LOOP_DELAY_MS);

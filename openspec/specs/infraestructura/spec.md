@@ -14,7 +14,7 @@ A Docker Compose v2 file defining two services:
 
 **Service `mosquitto`:**
 - Image: `eclipse-mosquitto:2` (latest stable 2.x)
-- Port mapping: `1883:1883`
+- Port mapping: `8883:8883` (TLS)
 - Volume mount: `./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro`
 - Volume mount: `mosquitto_data:/mosquitto/data` (Docker named volume for persistence)
 - Volume mount: `mosquitto_logs:/mosquitto/log` (Docker named volume for logs)
@@ -48,11 +48,24 @@ RUN npm install --no-audit --no-fund \
 
 ### A-3: `deploy/mosquitto/config/mosquitto.conf`
 
-Mosquitto broker configuration:
+Mosquitto broker configuration with TLS on 8883 and healthcheck on 1883:
 
 ```
-listener 1883 0.0.0.0
+# TLS listener — authenticated clients only
+listener 8883 0.0.0.0
+cafile /mosquitto/certs/ca.crt
+certfile /mosquitto/certs/server.crt
+keyfile /mosquitto/certs/server.key
+require_certificate false
+use_identity_as_username false
+password_file /mosquitto/config/passwd
+allow_anonymous false
+
+# Healthcheck listener — localhost only, no auth
+listener 1883 127.0.0.1
 allow_anonymous true
+
+# Global defaults
 persistence true
 persistence_location /mosquitto/data/
 log_dest file /mosquitto/log/mosquitto.log
@@ -70,7 +83,7 @@ Empty directory created as bind mount target. Must contain after first run:
 Documentation containing:
 - Prerequisites (Docker v24+, Docker Compose v2+)
 - Quick start: `cd deploy && docker compose up -d`
-- Access URLs: `http://localhost:1880` (Node-RED), `localhost:1883` (Mosquitto)
+- Access URLs: `http://localhost:1880` (Node-RED), `mqtts://localhost:8883` (Mosquitto TLS)
 - How to stop: `docker compose down`
 - Persistence behavior explanation
 - Resource requirements (Mosquitto: 64MB RAM, Node-RED: 256MB+ RAM)
@@ -82,6 +95,8 @@ Documentation containing:
 ```
 deploy/nodered/data/flows_cred.json
 deploy/mosquitto/log/
+deploy/mosquitto/certs/
+deploy/mosquitto/config/passwd
 ```
 
 ---
@@ -124,10 +139,14 @@ deploy/
 
 ### R-3: Mosquitto Configuration
 
-- MUST listen on port 1883 on all interfaces (`0.0.0.0`)
-- MUST allow anonymous connections (`allow_anonymous true`)
+- MUST listen on port 8883 on all interfaces (`0.0.0.0`) with TLS enabled
+- MUST reference `cafile`, `certfile`, and `keyfile` for TLS certificates
+- MUST have `password_file` pointing to `/mosquitto/config/passwd`
+- MUST have `allow_anonymous false` on port 8883 (all clients must authenticate)
+- MUST listen on port 1883 bound to `127.0.0.1` only (healthcheck, no external access)
+- MUST have `allow_anonymous true` on port 1883 (healthcheck only)
+- Global `allow_anonymous` MUST be `false`
 - MUST have disk persistence enabled (`persistence true`)
-- MUST NOT require username/password
 - Config file MUST be mounted as read-only (`:ro`)
 
 ### R-4: Node-RED Configuration
@@ -154,8 +173,9 @@ The Node-RED image MUST include these npm packages at build time:
 ### R-7: Network
 
 - Both services MUST be on the same Docker Compose default network
-- Mosquitto MUST be reachable from Node-RED via hostname `mosquitto`
-- Port 1883 MUST be reachable from host at `localhost:1883`
+- Mosquitto MUST be reachable from Node-RED via hostname `mosquitto` on port 8883 (TLS)
+- Port 8883 MUST be reachable from host at `localhost:8883` (TLS)
+- Port 1883 MUST NOT be reachable from host (bound to 127.0.0.1 inside container)
 - Port 1880 MUST be reachable from host at `http://localhost:1880`
 
 ### R-8: Documentation
@@ -176,27 +196,33 @@ The Node-RED image MUST include these npm packages at build time:
 ```
 GIVEN Docker and Docker Compose v2 are installed
 AND the deploy/ directory exists with all required files
+AND certificates have been generated via generate-certs.sh
 WHEN running `docker compose up -d` from deploy/
 THEN both services reach "running" state within 60 seconds
 AND `docker compose ps` shows mosquitto and nodered as healthy/running
-AND port 1883 is listening on the host
+AND port 8883 is listening on the host
 AND port 1880 is listening on the host
 ```
 
-### Scenario 2: Mosquitto accepts MQTT connections
+### Scenario 2: Mosquitto accepts MQTT connections over TLS with credentials
 ```
 GIVEN both containers are running
-WHEN an MQTT client connects to localhost:1883 without credentials
+AND a valid CA certificate is available
+WHEN an MQTT client connects to localhost:8883 with TLS and valid username/password
 THEN the connection succeeds
 AND the client can publish to topic "test/topic"
 AND the client can subscribe to topic "test/topic"
 AND published messages are received by subscribers
+WHEN an MQTT client connects to localhost:8883 without credentials
+THEN the connection is rejected
+WHEN an MQTT client connects to localhost:8883 without TLS
+THEN the connection is rejected
 ```
 
-### Scenario 3: Node-RED connects to Mosquitto internally
+### Scenario 3: Node-RED connects to Mosquitto internally over TLS
 ```
 GIVEN both containers are running
-WHEN a Node-RED MQTT node is configured with broker host "mosquitto" and port 1883
+WHEN a Node-RED MQTT node is configured with broker host "mosquitto", port 8883, TLS enabled, and valid credentials
 THEN the connection status shows "connected"
 AND Node-RED can publish to MQTT topics
 AND Node-RED can receive messages from MQTT topics
@@ -257,28 +283,47 @@ THEN the named volumes are removed (documented behavior)
 # 1. Check structure
 ls -R deploy/
 
-# 2. Start services
+# 2. Generate certificates (required before first run)
+export MQTT_USER=testuser MQTT_PASSWORD=testpass
+./deploy/scripts/generate-certs.sh
+
+# 3. Start services
 cd deploy && docker compose up -d
 
-# 3. Check services running
+# 4. Check services running
 docker compose ps
 
-# 4. Test Mosquitto connectivity
-docker run --rm --network deploy_default eclipse-mosquitto mosquitto_sub -h mosquitto -t 'test' -C 1 -W 5
+# 5. Test Mosquitto TLS connectivity with credentials
+docker run --rm --network deploy_default \
+  -v $(pwd)/mosquitto/certs/ca.crt:/ca.crt:ro \
+  eclipse-mosquitto \
+  mosquitto_pub -h mosquitto -p 8883 \
+  --cafile /ca.crt \
+  -u testuser -P testpass \
+  -t 'test' -m 'hello tls'
 
-# 5. Test Node-RED HTTP
+# 6. Test anonymous rejection on 8883
+docker run --rm --network deploy_default eclipse-mosquitto \
+  mosquitto_pub -h mosquitto -p 8883 -t 'test' -m 'should fail'
+# Expected: Connection Refused
+
+# 7. Test Node-RED HTTP
 curl -s -o /dev/null -w "%{http_code}" http://localhost:1880
 # Expected: 200 or 302
 
-# 6. Check installed nodes in Node-RED
+# 8. Check installed nodes in Node-RED
 docker exec deploy-nodered-1 npm ls --depth=0 2>/dev/null | grep -E "node-red-dashboard|tfjs-coco-ssd|node-email|telegrambot"
 
-# 7. Test persistence
+# 9. Test persistence
 touch deploy/nodered/data/test_persistence
 docker compose down
 test -f deploy/nodered/data/test_persistence && echo "PERSISTENCE OK" || echo "PERSISTENCE FAILED"
 rm deploy/nodered/data/test_persistence
 
-# 8. Check README exists
+# 10. Check README exists
 test -f deploy/README.md && echo "README OK" || echo "README MISSING"
+
+# 11. Verify certs are gitignored
+git status deploy/mosquitto/certs/ deploy/mosquitto/config/passwd
+# Expected: nothing to commit
 ```

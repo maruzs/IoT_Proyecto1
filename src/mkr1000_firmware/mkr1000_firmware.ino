@@ -4,17 +4,36 @@
 #include "src/mqtt_manager.h"
 #include "src/message_builder.h"
 #include <WiFi101.h>
+#include <WiFiClient.h>
 
-WiFiClient wifiClient;
+WiFiClient mkrClient;
 unsigned long lastPublishTime = 0;
 
 void setup() {
   Serial.begin(9600);
+  while (!Serial) delay(10);
+  Serial.println("MKR1000 boot");
+
   initSensors();
   initActuators();
+
+  Serial.print("WiFi: "); Serial.println(WIFI_SSID);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  while (WiFi.status() != WL_CONNECTED) { delay(500); }
-  initMQTT(wifiClient, MQTT_SERVER);
+  unsigned long wifiStart = millis();
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+    if (millis() - wifiStart > 15000) {
+      Serial.println("\nWiFi TIMEOUT");
+      break;
+    }
+  }
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("\nWiFi OK");
+    // NTP no necesario: MKR1000 usa puerto 1884 non-TLS
+    Serial.print("MQTT: "); Serial.println(MQTT_SERVER);
+    initMQTT(mkrClient, MQTT_SERVER, MQTT_PORT, MQTT_USER, MQTT_PASSWORD);
+  }
 }
 
 void loop() {

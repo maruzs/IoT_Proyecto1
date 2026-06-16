@@ -9,10 +9,13 @@
  */
 
 #include <WiFi101.h>
+#include <WiFiClient.h>
 #include <PubSubClient.h>
 
 /** Configura el cliente MQTT con el WiFiClient y el broker. */
-void initMQTT(WiFiClient& wifiClient, const char* server);
+void initMQTT(WiFiClient& client, const char* server,
+              uint16_t port, const char* username,
+              const char* password);
 
 /** Reconecta al broker si es necesario y resuscribe a topicos de control. */
 bool ensureConnected();

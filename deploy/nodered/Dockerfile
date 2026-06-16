@@ -10,11 +10,15 @@
 # ---------------------------------------------------------------------------
 FROM alpine:3.20 AS config
 ARG TELEGRAM_BOT_TOKEN
+ARG MQTT_USER=equipo69
+ARG MQTT_PASSWORD=IoT2026Secure!
 WORKDIR /tmp
 
-# Generar flows_cred.json con el token real
+# Generar flows_cred.json con credenciales reales
 COPY deploy/nodered/flows_cred.json.template .
-RUN sed "s/__TELEGRAM_BOT_TOKEN__/${TELEGRAM_BOT_TOKEN}/g" \
+RUN sed -e "s/__TELEGRAM_BOT_TOKEN__/${TELEGRAM_BOT_TOKEN}/g" \
+        -e "s/__MQTT_USER__/${MQTT_USER}/g" \
+        -e "s/__MQTT_PASSWORD__/${MQTT_PASSWORD}/g" \
         flows_cred.json.template > flows_cred.json && \
     echo "[config] flows_cred.json generated"
 
