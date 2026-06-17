@@ -606,7 +606,7 @@ async def query_handler_node(state: SmartHomeState) -> dict:
         ollama = OllamaClient(
             base_url=_settings.OLLAMA_URL,
             model=_settings.OLLAMA_MODEL,
-            timeout=_settings.OLLAMA_TIMEOUT,
+            timeout=150,  # match asyncio.wait_for(180s) below
             max_retries=1,
         )
         raw = await asyncio.wait_for(
