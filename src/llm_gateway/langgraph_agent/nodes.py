@@ -507,7 +507,7 @@ async def query_handler_node(state: SmartHomeState) -> dict:
             timeout=_settings.OLLAMA_TIMEOUT,
             max_retries=1,
         )
-        raw = await asyncio.wait_for(ollama.generate(user_prompt), timeout=10.0)
+        raw = await asyncio.wait_for(ollama.generate(user_prompt), timeout=60.0)
         await ollama.close()
         response_text = raw.strip()
     except (asyncio.TimeoutError, OllamaError, Exception) as exc:
