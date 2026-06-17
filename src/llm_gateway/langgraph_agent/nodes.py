@@ -30,10 +30,10 @@ async def monitoring_node(state: SmartHomeState) -> dict:
         mcp_client = MCPClient(url=settings.mcp_server_url)
         sensor_data = await mcp_client.call_tool("get_sensor_state")
 
-        result["temperature"] = float(sensor_data.get("temperature", 0.0))
-        result["humidity"] = float(sensor_data.get("humidity", 0.0))
-        result["gas_ppm"] = int(sensor_data.get("gas_ppm", 0))
-        result["sound_db"] = float(sensor_data.get("sound_db", 0.0))
+        result["temperature"] = float(sensor_data.get("temperatura", sensor_data.get("temperature", 0.0)))
+        result["humidity"] = float(sensor_data.get("humedad", sensor_data.get("humidity", 0.0)))
+        result["gas_ppm"] = int(sensor_data.get("gas", sensor_data.get("gas_ppm", 0)))
+        result["sound_db"] = float(sensor_data.get("sonido", sensor_data.get("sound_db", 0.0)))
         result["sensor_ts"] = sensor_data.get("timestamp", datetime.now().isoformat())
         result["mcp_connected"] = True
 
@@ -476,10 +476,10 @@ async def query_handler_node(state: SmartHomeState) -> dict:
             "notification_ready": True,
         }
 
-    temp = sensor_data.get("temperature", "N/A")
-    hum = sensor_data.get("humidity", "N/A")
+    temp = sensor_data.get("temperatura", sensor_data.get("temperature", "N/A"))
+    hum = sensor_data.get("humedad", sensor_data.get("humidity", "N/A"))
     gas = sensor_data.get("gas", sensor_data.get("gas_ppm", "N/A"))
-    sound = sensor_data.get("sound", sensor_data.get("sound_db", "N/A"))
+    sound = sensor_data.get("sonido", sensor_data.get("sound_db", "N/A"))
 
     user_question = state.get("user_input_raw", "¿Cómo está la casa?")
 
