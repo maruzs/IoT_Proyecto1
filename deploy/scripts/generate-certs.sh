@@ -45,13 +45,17 @@ mkdir -p "${CERTS_DIR}"
 mkdir -p "$(dirname "${PASSWD_FILE}")"
 
 # ---------------------------------------------------------------------------
-# Generate CA key and self-signed certificate
+# Generate CA key and self-signed certificate (idempotent)
 # ---------------------------------------------------------------------------
-echo "[1/4] Generating CA key and certificate..."
-openssl genrsa -out "${CERTS_DIR}/ca.key" 2048 2>/dev/null
-openssl req -new -x509 -days 365 -key "${CERTS_DIR}/ca.key" \
-    -out "${CERTS_DIR}/ca.crt" \
-    -subj "/C=AR/O=SmartHomeIoT/CN=SmartHomeIoT-CA" 2>/dev/null
+if [ ! -f "${CERTS_DIR}/ca.crt" ] || [ ! -f "${CERTS_DIR}/ca.key" ]; then
+    echo "[1/4] Generating CA key and certificate..."
+    openssl genrsa -out "${CERTS_DIR}/ca.key" 2048 2>/dev/null
+    openssl req -new -x509 -days 365 -key "${CERTS_DIR}/ca.key" \
+        -out "${CERTS_DIR}/ca.crt" \
+        -subj "/C=AR/O=SmartHomeIoT/CN=SmartHomeIoT-CA" 2>/dev/null
+else
+    echo "[1/4] CA certificate already exists, skipping..."
+fi
 
 # ---------------------------------------------------------------------------
 # Generate server key and certificate signed by CA
