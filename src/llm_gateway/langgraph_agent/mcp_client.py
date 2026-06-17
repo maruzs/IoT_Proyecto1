@@ -15,17 +15,20 @@ class MCPClient:
 
     El MCP Server (deploy/mcp-server/) usa FastMCP con streamable_http_app().
     Las 8 tools devuelven str (JSON), por lo que parseamos después de call_tool.
+
+    TLS se verifica con el CA cert compartido del proyecto (/certs/ca.crt),
+    montado en el contenedor llm-gateway via docker-compose.
     """
 
-    def __init__(self, url: str = "https://mcp-server:8002/mcp"):
+    def __init__(self, url: str = "https://mcp-server:8002/mcp", ca_cert: str = "/certs/ca.crt"):
         self.url = url
+        self._ca_cert = ca_cert
 
     async def call_tool(self, name: str, arguments: dict | None = None) -> dict:
         """Call an MCP tool and return parsed JSON result."""
-        # Docker internal TLS with self-signed cert — disable verification
         async with streamablehttp_client(
             self.url,
-            httpx_client_factory=lambda: httpx.AsyncClient(verify=False),
+            httpx_client_factory=lambda: httpx.AsyncClient(verify=self._ca_cert),
         ) as (read, write):
             async with ClientSession(read, write) as session:
                 await session.initialize()
@@ -37,7 +40,7 @@ class MCPClient:
         """Discover available tools from the MCP Server."""
         async with streamablehttp_client(
             self.url,
-            httpx_client_factory=lambda: httpx.AsyncClient(verify=False),
+            httpx_client_factory=lambda: httpx.AsyncClient(verify=self._ca_cert),
         ) as (read, write):
             async with ClientSession(read, write) as session:
                 await session.initialize()
