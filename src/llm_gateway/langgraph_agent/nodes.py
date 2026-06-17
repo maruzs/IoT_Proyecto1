@@ -412,14 +412,26 @@ async def degraded_mode_node(state: SmartHomeState) -> dict:
 
 
 async def receiving_input_node(state: SmartHomeState) -> dict:
-    """Classify user input using the rule-first intent classifier."""
+    """Classify user input using the rule-first intent classifier, with LLM fallback."""
     user_input = state.get("user_input_raw")
     if not user_input:
         return {"classified_intent": None}
 
     from .intent_classifier import classify
+    from ..ollama_client import OllamaClient
+    from ..config import Settings
 
-    result = await classify(user_input)
+    _settings = Settings()
+    ollama = OllamaClient(
+        base_url=_settings.OLLAMA_URL,
+        model=_settings.OLLAMA_MODEL,
+        timeout=_settings.OLLAMA_TIMEOUT,
+        max_retries=1,
+    )
+    try:
+        result = await classify(user_input, ollama_client=ollama)
+    finally:
+        await ollama.close()
     entities = result.get("entities", {})
     return {
         "classified_intent": result.get("intent"),
