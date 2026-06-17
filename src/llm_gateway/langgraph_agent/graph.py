@@ -41,7 +41,7 @@ def route_after_monitoring(state: SmartHomeState) -> str:
 
 
 def route_after_evaluating(state: SmartHomeState) -> str:
-    """After evaluation: decide if anomaly, normalize, or keep monitoring."""
+    """After evaluation: decide if anomaly, normalize, or notify."""
     # Normalization: 3 consecutive normal readings after a critical event
     if state.get("normal_readings", 0) >= 3 and state.get("last_critical"):
         return "normalize"  # sentinel → go back to IDLE equivalent
@@ -49,8 +49,8 @@ def route_after_evaluating(state: SmartHomeState) -> str:
     if state.get("anomaly_detected") or state.get("trend_rising"):
         return "deciding"
 
-    # Everything normal, no critical history → loop back
-    return "monitoring"
+    # Everything normal → notify and end this cycle
+    return "notifying"
 
 
 def route_after_deciding(state: SmartHomeState) -> str:
@@ -115,6 +115,16 @@ def route_after_error(state: SmartHomeState) -> str:
     return "notifying"  # give up this cycle, notify and go back
 
 
+def route_after_command_router(state: SmartHomeState) -> str:
+    """After command router: route silence to silenced node, else notify."""
+    intent = state.get("classified_intent")
+    if intent == "command_silence":
+        return "silenced"
+    if state.get("critical_active"):
+        return "critical_handler"
+    return "notifying"
+
+
 def route_after_silenced(state: SmartHomeState) -> str:
     """After silenced node: critical override or stay silenced."""
     if state.get("critical_active"):
@@ -165,7 +175,7 @@ def build_graph() -> StateGraph:
     # ── Evaluation flow ──
     builder.add_conditional_edges("evaluating", route_after_evaluating, {
         "deciding": "deciding",
-        "monitoring": "monitoring",
+        "notifying": "notifying",
         "normalize": "notifying",  # normalization → notify and go back
     })
 
@@ -201,7 +211,8 @@ def build_graph() -> StateGraph:
     })
 
     # ── Command routing ──
-    builder.add_conditional_edges("command_router", route_after_silenced, {
+    builder.add_conditional_edges("command_router", route_after_command_router, {
+        "silenced": "silenced",
         "critical_handler": "critical_handler",
         "notifying": "notifying",
     })
@@ -291,7 +302,7 @@ def build_graph_with_user_entry() -> StateGraph:
     })
     builder.add_conditional_edges("evaluating", route_after_evaluating, {
         "deciding": "deciding",
-        "monitoring": "monitoring",
+        "notifying": "notifying",
         "normalize": "notifying",
     })
     builder.add_edge("critical_handler", "executing")
@@ -314,7 +325,8 @@ def build_graph_with_user_entry() -> StateGraph:
         "deciding": "deciding",
         "waiting_clarification": "waiting_clarification",
     })
-    builder.add_conditional_edges("command_router", route_after_silenced, {
+    builder.add_conditional_edges("command_router", route_after_command_router, {
+        "silenced": "silenced",
         "critical_handler": "critical_handler",
         "notifying": "notifying",
     })

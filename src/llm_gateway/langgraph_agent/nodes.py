@@ -244,8 +244,14 @@ async def deciding_node(
 
     acciones: list[dict] = []
     for item in raw_acciones:
-        if isinstance(item, dict) and "tool" in item:
-            acciones.append(item)
+        if isinstance(item, dict):
+            if "tool" in item:
+                acciones.append(item)
+            elif "nombre" in item:
+                # Normalize phi3:mini nested format
+                acciones.append({"tool": item["nombre"], "args": item.get("args", {})})
+            else:
+                acciones.append({"tool": str(item), "args": {}})
         elif isinstance(item, str) and item != "no_action":
             acciones.append({"tool": item, "args": {}})
 
@@ -326,16 +332,25 @@ async def executing_node(state: SmartHomeState) -> dict:
 
 async def notifying_node(state: SmartHomeState) -> dict:
     """Prepare notification payload and reset state after a successful cycle."""
-    llm_decision = state.get("llm_decision", {})
+    existing = state.get("notification_payload")
     mcp_results = state.get("mcp_results", [])
 
-    notification_payload = {
-        "nivel": llm_decision.get("nivel", "normal"),
-        "razonamiento": llm_decision.get("razonamiento", ""),
-        "acciones": llm_decision.get("acciones", []),
-        "timestamp": llm_decision.get("timestamp", datetime.now().isoformat()),
-        "mcp_results": mcp_results,
-    }
+    if existing:
+        # Preserve payload set by upstream nodes (query, help, clarification, etc.)
+        notification_payload = {
+            **existing,
+            "timestamp": existing.get("timestamp", datetime.now().isoformat()),
+            "mcp_results": mcp_results,
+        }
+    else:
+        llm_decision = state.get("llm_decision", {})
+        notification_payload = {
+            "nivel": llm_decision.get("nivel", "normal"),
+            "razonamiento": llm_decision.get("razonamiento", ""),
+            "acciones": llm_decision.get("acciones", []),
+            "timestamp": llm_decision.get("timestamp", datetime.now().isoformat()),
+            "mcp_results": mcp_results,
+        }
 
     result: dict = {
         "notification_payload": notification_payload,
@@ -345,7 +360,8 @@ async def notifying_node(state: SmartHomeState) -> dict:
     if state.get("critical_active"):
         result["normal_readings"] = 0
 
-    if state.get("mode") != "active":
+    # Only reset degraded mode; preserve silenced so the scheduler respects it
+    if state.get("mode") == "degraded":
         result["mode"] = "active"
 
     return result
@@ -558,7 +574,14 @@ async def silenced_node(state: SmartHomeState) -> dict:
         }
 
     normal_readings = state.get("normal_readings", 0) + 1
-    result: dict = {"normal_readings": normal_readings}
+    result: dict = {
+        "normal_readings": normal_readings,
+        "notification_payload": {
+            "nivel": "info",
+            "razonamiento": "Alertas silenciadas. Respondé con /status para ver el estado.",
+        },
+        "notification_ready": True,
+    }
 
     if normal_readings >= 3:
         result["mode"] = "active"

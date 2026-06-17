@@ -53,6 +53,11 @@ class SmartHomeState(TypedDict, total=False):
     # Pending actions
     pending_actions: list
     action_plan: list
+    mcp_results: list
+
+    # Notification
+    notification_payload: dict
+    notification_ready: bool
 
     # Error handling
     error_type: Optional[str]
