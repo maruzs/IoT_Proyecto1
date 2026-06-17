@@ -63,7 +63,7 @@ def _tokens(text: str) -> set[str]:
     return set(cleaned.split())
 
 
-def classify(message: str, ollama_client: Optional[object] = None) -> dict:
+async def classify(message: str, ollama_client: Optional[object] = None) -> dict:
     """Classify a user message using a rule-first approach.
 
     Rules are evaluated in priority order. Only ambiguous messages
@@ -103,36 +103,59 @@ def classify(message: str, ollama_client: Optional[object] = None) -> dict:
     if raw.endswith("?") or (tokens_set & _QUERY_KEYWORDS):
         return {"intent": "query", "confidence": 1.0, "entities": {}}
 
-    # 5. LLM fallback — only when no rule matches
+    # 5. LLM fallback — deduce intent AND action when no rule matches
     if ollama_client is not None:
-        prompt = (
-            "Clasificá este mensaje en UNA categoría: "
-            "direct_action, query, command, contextual_action, ambiguous. "
-            f"Mensaje: {message}. Categoría:"
-        )
-        try:
-            result = asyncio.wait_for(
-                ollama_client.generate(prompt),
-                timeout=2.0,
-            )
-            # Normalize result to one of the expected intents
-            intent = _normalize(str(result))
-            valid_intents = {
-                "direct_action",
-                "query",
-                "command",
-                "contextual_action",
-                "ambiguous",
-            }
-            if intent not in valid_intents:
-                intent = "ambiguous"
-            return {"intent": intent, "confidence": 0.7, "entities": {}}
-        except asyncio.TimeoutError:
-            logger.warning("Intent classifier LLM fallback timed out after 2s")
-            return {"intent": "ambiguous", "confidence": 0.5, "entities": {}}
-        except Exception as exc:
-            logger.warning("Intent classifier LLM fallback failed: %s", exc)
-            return {"intent": "ambiguous", "confidence": 0.5, "entities": {}}
+        return await _llm_deduce(message, ollama_client)
 
-    # No rules matched and no LLM client available
     return {"intent": "ambiguous", "confidence": 0.5, "entities": {}}
+
+
+async def _llm_deduce(message: str, ollama_client) -> dict:
+    """Ask the LLM to deduce the user's intent and the corresponding MCP tool + args.
+
+    Available tools: activate_led_alerta(estado: bool), activate_led_puerta(accion: ON/OFF),
+    trigger_camera(duracion: int), send_notification(mensaje: str), silence_alerts(),
+    get_sensor_state(), get_system_status(), query_history(from, to, limit).
+    """
+    prompt = (
+        "Sos un clasificador de intenciones para un sistema SmartHome. "
+        "El usuario controla: LED alerta, LED puerta, cámara, notificaciones, silencio de alarmas. "
+        "También puede consultar: sensores (temperatura, humedad, gas, ruido), estado del sistema, historial.\n\n"
+        "Herramientas disponibles:\n"
+        "- activate_led_alerta(estado: bool)\n"
+        "- activate_led_puerta(accion: ON/OFF)\n"
+        "- trigger_camera(duracion: int)\n"
+        "- send_notification(mensaje: str)\n"
+        "- silence_alerts()\n"
+        "- get_sensor_state()\n"
+        "- get_system_status()\n"
+        "- query_history(from, to, limit)\n\n"
+        f"Mensaje del usuario: \"{message}\"\n\n"
+        "Respondé SOLO con un JSON en este formato exacto:\n"
+        '{"intent": "direct_action|query|command|ambiguous", '
+        '"tool": "nombre_de_la_herramienta_o_null", '
+        '"tool_args": {}|null, '
+        '"reasoning": "breve explicación"}'
+    )
+    try:
+        raw = await asyncio.wait_for(
+            ollama_client.generate(prompt),
+            timeout=5.0,
+        )
+        # Try to parse as JSON
+        import json as _json
+        data = _json.loads(raw.strip())
+        intent = data.get("intent", "ambiguous")
+        if intent not in ("direct_action", "query", "command", "ambiguous"):
+            intent = "ambiguous"
+        return {
+            "intent": intent,
+            "confidence": 0.7,
+            "entities": {
+                "tool": data.get("tool"),
+                "tool_args": data.get("tool_args"),
+            },
+        }
+    except (asyncio.TimeoutError, Exception) as exc:
+        logger.warning("Intent classifier LLM fallback failed: %s", exc)
+        return {"intent": "ambiguous", "confidence": 0.5, "entities": {}}

@@ -419,7 +419,7 @@ async def receiving_input_node(state: SmartHomeState) -> dict:
 
     from .intent_classifier import classify
 
-    result = classify(user_input)
+    result = await classify(user_input)
     return {
         "classified_intent": result.get("intent"),
         "intent_confidence": result.get("confidence", 0.0),

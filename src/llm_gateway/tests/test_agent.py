@@ -83,12 +83,13 @@ async def test_critical_bypass_temp(mock_mcp_client, base_state):
     ("hola", "ambiguous"),
     ],
 )
-def test_intent_classifier_accuracy(message, expected_intent):
+@pytest.mark.asyncio
+async def test_intent_classifier_accuracy(message, expected_intent):
     """Rule-first classifier must hit ≥85% without LLM calls."""
     with patch(
         "src.llm_gateway.langgraph_agent.intent_classifier.asyncio"
     ) as mock_asyncio:
-        result = classify(message)
+        result = await classify(message)
         assert result["intent"] == expected_intent
         # Ambiguous fallback has lower confidence; rules are 1.0
         if expected_intent == "ambiguous":
