@@ -144,12 +144,15 @@ async def _llm_deduce(message: str, ollama_client) -> dict:
         )
         # Try to parse as JSON
         import json as _json
-        # Strip markdown fences that phi3:mini sometimes wraps JSON in
+        # Strip markdown fences and fix common phi3:mini JSON quirks
         cleaned = raw.strip()
+        # Remove ``` fences
         if cleaned.startswith("```"):
             cleaned = cleaned.split("\n", 1)[-1] if "\n" in cleaned else cleaned
             cleaned = cleaned.rsplit("```", 1)[0] if cleaned.endswith("```") else cleaned
             cleaned = cleaned.strip()
+        # phi3:mini sometimes uses \\' which is not valid JSON
+        cleaned = cleaned.replace("\\'", "'")
         data = _json.loads(cleaned)
         intent = data.get("intent", "ambiguous")
         if intent not in ("direct_action", "query", "command", "ambiguous"):
@@ -163,5 +166,5 @@ async def _llm_deduce(message: str, ollama_client) -> dict:
             },
         }
     except (asyncio.TimeoutError, Exception) as exc:
-        logger.warning("Intent classifier LLM fallback failed: %s", exc)
+        logger.warning("Intent classifier LLM fallback failed: %s (type=%s)", exc, type(exc).__name__)
         return {"intent": "ambiguous", "confidence": 0.5, "entities": {}}
