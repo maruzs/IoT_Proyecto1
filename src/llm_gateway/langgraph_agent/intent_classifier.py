@@ -16,14 +16,31 @@ _COMMAND_HELP = {"/help", "/ayuda"}
 _CONFIRM_WORDS = {"sí", "si", "dale", "ok", "confirmo", "aprobado"}
 _REJECT_WORDS = {"no", "nop", "cancelar", "rechazo"}
 
-# --- Direct action keywords ---
-_ACTION_KEYWORDS = {"prendé", "apagá", "activá", "desactivá", "encendé", "silenciá"}
+# --- Direct action keywords (español neutro: imperativo + infinitivos) ---
+_ACTION_KEYWORDS = {
+    # Encender / apagar
+    "prende", "prender", "enciende", "encender",
+    "apaga", "apagar",
+    # Activar / desactivar
+    "activa", "activar", "desactiva", "desactivar",
+    # Silenciar
+    "silencia", "silenciar",
+    # Puerta
+    "abre", "abrir", "cierra", "cerrar",
+    # Cámara
+    "captura", "capturar", "graba", "grabar", "foto", "fotografía", "fotografiar",
+    # Notificación
+    "notifica", "notificar", "avisa", "avisar", "informa", "informar",
+}
 
 # --- Query keywords ---
 _QUERY_KEYWORDS = {
-    "qué", "cuál", "cómo", "cuánto", "hay", "está",
+    "qué", "cuál", "cómo", "cuánto", "quien", "donde",
+    "hay", "está", "estan",
     "temperatura", "humedad", "gas", "ruido", "sonido",
-    "estado", "led", "alerta", "cámara",
+    "estado", "led", "alerta", "cámara", "sensor", "sensores",
+    "historial", "histórico", "historia", "ayer", "antes", "tendencia",
+    "nivel", "valor", "valores", "lectura", "datos",
 }
 
 # Strip punctuation for normalization
@@ -77,11 +94,12 @@ def classify(message: str, ollama_client: Optional[object] = None) -> dict:
         if tokens_set & _REJECT_WORDS:
             return {"intent": "response_reject", "confidence": 1.0, "entities": {}}
 
-    # 3. Direct actions — action keywords anywhere in the message
+    # 3. Direct actions — action keywords anywhere in the message (checked BEFORE queries
+    #    because some action targets appear in query keywords: "led", "cámara", "alerta")
     if tokens_set & _ACTION_KEYWORDS:
         return {"intent": "direct_action", "confidence": 1.0, "entities": {}}
 
-    # 4. Queries — question keywords or message ends with '?'
+    # 4. Queries — question keywords or message ends with '?' (but NOT if matched as action)
     if raw.endswith("?") or (tokens_set & _QUERY_KEYWORDS):
         return {"intent": "query", "confidence": 1.0, "entities": {}}
 

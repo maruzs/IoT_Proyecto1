@@ -71,16 +71,16 @@ async def test_critical_bypass_temp(mock_mcp_client, base_state):
 @pytest.mark.parametrize(
     "message,expected_intent",
     [
-        ("/entendido", "command_silence"),
-        ("/status", "command_status"),
-        ("/ayuda", "command_help"),
-        ("sí", "response_confirm"),
-        ("no", "response_reject"),
-        ("prendé LED alerta", "direct_action"),
-        ("¿qué temperatura hay?", "query"),
-        ("¿cómo está el gas?", "query"),
-        ("activá la cámara", "direct_action"),
-        ("hola", "ambiguous"),
+    ("/entendido", "command_silence"),
+    ("/status", "command_status"),
+    ("/ayuda", "command_help"),
+    ("sí", "response_confirm"),
+    ("no", "response_reject"),
+    ("prende LED alerta", "direct_action"),
+    ("¿qué temperatura hay?", "query"),
+    ("¿cómo está el gas?", "query"),
+    ("activa la cámara", "direct_action"),
+    ("hola", "ambiguous"),
     ],
 )
 def test_intent_classifier_accuracy(message, expected_intent):

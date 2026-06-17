@@ -208,7 +208,7 @@ async def llm_agent(request: Request, body: AgentRequest):
 
     try:
         # Invoke the graph with a 30s timeout
-        config = {"configurable": {"thread_id": "user-session"}}
+        config = {"configurable": {"thread_id": f"user-{datetime.now(timezone.utc).timestamp()}"}}
         result = await asyncio.wait_for(
             agent_with_user.ainvoke(initial_state, config),
             timeout=30.0,

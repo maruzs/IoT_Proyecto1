@@ -572,29 +572,34 @@ async def direct_exec_node(state: SmartHomeState) -> dict:
     action = None
 
     # LED alerta
-    if ("prendé" in raw or "encendé" in raw or "activá" in raw) and "led" in raw and "alerta" in raw:
+    if _has_any(raw, {"prende", "prender", "enciende", "encender", "activa", "activar"}) and "led" in raw and "alerta" in raw:
         action = {"tool": "activate_led_alerta", "args": {"estado": True}}
-    elif ("apagá" in raw or "desactivá" in raw) and "led" in raw and "alerta" in raw:
+    elif _has_any(raw, {"apaga", "apagar", "desactiva", "desactivar"}) and "led" in raw and "alerta" in raw:
         action = {"tool": "activate_led_alerta", "args": {"estado": False}}
     # LED puerta
-    elif ("abrí" in raw or "prendé" in raw or "activá" in raw) and ("puerta" in raw or "led puerta" in raw):
+    elif _has_any(raw, {"abre", "abrir", "prende", "prender", "activa", "activar"}) and ("puerta" in raw or "led puerta" in raw):
         action = {"tool": "activate_led_puerta", "args": {"accion": "ON"}}
-    elif ("cerrá" in raw or "apagá" in raw or "desactivá" in raw) and ("puerta" in raw or "led puerta" in raw):
+    elif _has_any(raw, {"cierra", "cerrar", "apaga", "apagar", "desactiva", "desactivar"}) and ("puerta" in raw or "led puerta" in raw):
         action = {"tool": "activate_led_puerta", "args": {"accion": "OFF"}}
     # Cámara
-    elif ("cámara" in raw or "foto" in raw or "capturá" in raw or "grabá" in raw):
+    elif _has_any(raw, {"cámara", "camara", "foto", "captura", "capturar", "graba", "grabar", "fotografía", "fotografiar"}):
         action = {"tool": "trigger_camera", "args": {"duracion": 5}}
     # Notificación
-    elif ("notificá" in raw or "avisá" in raw or "mandá" in raw) and "mensaje" in raw:
-        # Default notification text
+    elif _has_any(raw, {"notifica", "notificar", "avisa", "avisar", "informa", "informar"}):
         action = {"tool": "send_notification", "args": {"mensaje": "Alerta enviada desde el agente SmartHome."}}
-    # Silenciar alarmas (alternative to /entendido)
-    elif "silenciá" in raw or "silencio" in raw:
+    # Silenciar alarmas
+    elif _has_any(raw, {"silencia", "silenciar", "silencio"}):
         action = {"tool": "silence_alerts", "args": {}}
     else:
         return {}
 
     return {"pending_actions": [action]}
+
+
+def _has_any(text: str, keywords: set) -> bool:
+    """Check if any of the keywords appear as whole words in the text."""
+    tokens = set(text.split())
+    return bool(tokens & keywords)
 
 
 async def waiting_confirmation_node(state: SmartHomeState) -> dict:
