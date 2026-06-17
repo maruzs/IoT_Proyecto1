@@ -483,6 +483,45 @@ async def query_handler_node(state: SmartHomeState) -> dict:
 
     user_question = state.get("user_input_raw", "¿Cómo está la casa?")
 
+    # ── Check if user is asking about history ──
+    raw_lower = user_question.lower()
+    history_keywords = {"historial", "histórico", "historia", "ayer", "antes", "tendencia", "evolución"}
+    if any(kw in raw_lower for kw in history_keywords):
+        try:
+            history_data = await mcp_client.call_tool("query_history", {"limit": 10})
+        except Exception:
+            history_data = None
+
+        history_text = ""
+        if history_data and isinstance(history_data, list) and len(history_data) > 0:
+            entries = history_data[:5]
+            history_text = "Últimas lecturas: " + "; ".join(
+                f"{e.get('timestamp','?')[:16]}: T={e.get('temperatura','?')}°C G={e.get('gas','?')}ppm"
+                for e in entries
+            )
+        else:
+            history_text = "No hay datos históricos disponibles aún."
+
+        return {
+            "notification_payload": {"nivel": "info", "razonamiento": history_text},
+            "notification_ready": True,
+        }
+
+    # ── Check if user is asking about system status ──
+    status_keywords = {"estado del sistema", "sistema", "alertas activas", "led estado"}
+    if any(kw in raw_lower for kw in status_keywords):
+        status_text_parts = []
+        if system_data:
+            for k, v in system_data.items():
+                status_text_parts.append(f"{k}: {v}")
+        status_text = "; ".join(status_text_parts) if status_text_parts else "Estado del sistema no disponible."
+        return {
+            "notification_payload": {"nivel": "info", "razonamiento": status_text},
+            "notification_ready": True,
+        }
+
+    # ── Normal query → LLM natural language ──
+
     # Build prompt for LLM
     user_prompt = (
         f"El usuario preguntó: \"{user_question}\"\n\n"
@@ -530,11 +569,28 @@ async def query_handler_node(state: SmartHomeState) -> dict:
 async def direct_exec_node(state: SmartHomeState) -> dict:
     """Parse direct action keywords from the user message and map to MCP tools."""
     raw = state.get("user_input_raw", "").lower()
+    action = None
 
-    if "prendé" in raw and "led alerta" in raw:
+    # LED alerta
+    if ("prendé" in raw or "encendé" in raw or "activá" in raw) and "led" in raw and "alerta" in raw:
         action = {"tool": "activate_led_alerta", "args": {"estado": True}}
-    elif "apagá" in raw and "led alerta" in raw:
+    elif ("apagá" in raw or "desactivá" in raw) and "led" in raw and "alerta" in raw:
         action = {"tool": "activate_led_alerta", "args": {"estado": False}}
+    # LED puerta
+    elif ("abrí" in raw or "prendé" in raw or "activá" in raw) and ("puerta" in raw or "led puerta" in raw):
+        action = {"tool": "activate_led_puerta", "args": {"accion": "ON"}}
+    elif ("cerrá" in raw or "apagá" in raw or "desactivá" in raw) and ("puerta" in raw or "led puerta" in raw):
+        action = {"tool": "activate_led_puerta", "args": {"accion": "OFF"}}
+    # Cámara
+    elif ("cámara" in raw or "foto" in raw or "capturá" in raw or "grabá" in raw):
+        action = {"tool": "trigger_camera", "args": {"duracion": 5}}
+    # Notificación
+    elif ("notificá" in raw or "avisá" in raw or "mandá" in raw) and "mensaje" in raw:
+        # Default notification text
+        action = {"tool": "send_notification", "args": {"mensaje": "Alerta enviada desde el agente SmartHome."}}
+    # Silenciar alarmas (alternative to /entendido)
+    elif "silenciá" in raw or "silencio" in raw:
+        action = {"tool": "silence_alerts", "args": {}}
     else:
         return {}
 
