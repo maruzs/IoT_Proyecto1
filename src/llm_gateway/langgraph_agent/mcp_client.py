@@ -28,7 +28,7 @@ class MCPClient:
         """Call an MCP tool and return parsed JSON result."""
         async with streamablehttp_client(
             self.url,
-            httpx_client_factory=lambda: httpx.AsyncClient(verify=self._ca_cert),
+            httpx_client_factory=lambda **kw: httpx.AsyncClient(verify=self._ca_cert, **kw),
         ) as (read, write):
             async with ClientSession(read, write) as session:
                 await session.initialize()
@@ -40,7 +40,7 @@ class MCPClient:
         """Discover available tools from the MCP Server."""
         async with streamablehttp_client(
             self.url,
-            httpx_client_factory=lambda: httpx.AsyncClient(verify=self._ca_cert),
+            httpx_client_factory=lambda **kw: httpx.AsyncClient(verify=self._ca_cert, **kw),
         ) as (read, write):
             async with ClientSession(read, write) as session:
                 await session.initialize()
