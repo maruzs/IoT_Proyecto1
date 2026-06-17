@@ -568,9 +568,20 @@ async def query_handler_node(state: SmartHomeState) -> dict:
     system_prompt = (
         "Sos el asistente virtual de una casa inteligente (SmartHome equipo69).\n"
         "Tu tarea es responder preguntas del usuario sobre el estado del hogar.\n\n"
+        "Contexto de los sensores:\n"
+        "- Temperatura y humedad: ambiente general de la casa.\n"
+        "- Gas: concentración de gas en el aire (umbral de peligro: >1020 ppm).\n"
+        "- Ruido: micrófono en la puerta de entrada (detecta golpes, timbres, voces).\n"
+        "- Cámara: apunta a la puerta, hace reconocimiento facial.\n"
+        "  El usuario puede activarla diciendo \"activá cámara\", \"mirá la puerta\",\n"
+        "  \"fijate quién está\", \"revisá la entrada\", etc.\n"
+        "- LED alerta: se enciende automático si hay gas o temperatura crítica.\n"
+        "- LED puerta: indica si la puerta está abierta o cerrada.\n\n"
         "Reglas:\n"
         "- Respondé en español, en lenguaje natural, 1 a 3 frases máximo\n"
         "- Mencioná los valores concretos de los sensores cuando sea relevante\n"
+        "- Si el usuario pregunta por alguien en la puerta pero no pidió explícitamente\n"
+        "  activar la cámara, sugerile que diga \"activá cámara\" o \"revisá la puerta\"\n"
         "- Si algo está fuera de rango, avisá con claridad y sugerí acciones\n"
         "- Si el usuario pregunta por seguridad (gas, humo, etc.), sé preciso\n"
         "- No inventes capacidades que el sistema no tiene\n"
@@ -644,7 +655,10 @@ async def direct_exec_node(state: SmartHomeState) -> dict:
     # Cámara
     elif _has_any(raw, {"cámara", "camara", "foto", "captura", "capturar", "graba", "grabar",
                          "fotografía", "fotografiar", "mira", "mirá", "mirar",
-                         "ve", "ver", "fijate", "fíjate", "fijarse"}):
+                         "ve", "ver", "fijate", "fíjate", "fijarse",
+                         "revisa", "revisar", "chequea", "chequear",
+                         "comprueba", "comprobar", "verifica", "verificar",
+                         "inspecciona", "inspeccionar"}):
         action = {"tool": "trigger_camera", "args": {"duracion": 5}}
     # Notificación
     elif _has_any(raw, {"notifica", "notificar", "avisa", "avisar", "informa", "informar"}):

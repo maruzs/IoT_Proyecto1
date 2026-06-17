@@ -30,13 +30,15 @@ _ACTION_KEYWORDS = {
     # Cámara — mirar, ver, fijarse
     "captura", "capturar", "graba", "grabar", "foto", "fotografía", "fotografiar",
     "mira", "mirá", "mirar", "ve", "ver", "fijate", "fíjate", "fijarse",
+    "revisa", "revisar", "chequea", "chequear", "comprueba", "comprobar",
+    "verifica", "verificar", "inspecciona", "inspeccionar",
     # Notificación
     "notifica", "notificar", "avisa", "avisar", "informa", "informar",
 }
 
 # --- Query keywords ---
 _QUERY_KEYWORDS = {
-    "qué", "cuál", "cómo", "cuánto", "quien", "donde",
+    "qué", "cuál", "cómo", "cuánto", "donde",
     "hay", "está", "estan",
     "temperatura", "humedad", "gas", "ruido", "sonido",
     "estado", "led", "alerta", "cámara", "sensor", "sensores",
@@ -124,6 +126,10 @@ async def _llm_deduce(message: str, ollama_client) -> dict:
         "Sos un clasificador de intenciones para un sistema SmartHome (equipo69).\n"
         "Tu única tarea es clasificar el mensaje del usuario en UNA categoría "
         "y devolver la herramienta MCP correspondiente.\n\n"
+        "⚠️ REGLA PRINCIPAL: si el usuario pide VER, REVISAR, COMPROBAR, INSPECCIONAR "
+        "o FIJARSE si hay alguien en la puerta/entrada, la intención ES 'direct_action' "
+        "y la herramienta ES 'trigger_camera'. No importa que haya palabras interrogativas "
+        "en la frase — el usuario quiere una acción, no una consulta.\n\n"
         "Contexto del sistema — qué hace cada sensor:\n"
         "- Temperatura y humedad: miden el ambiente general de la casa.\n"
         "- Gas (MQ-2): detecta concentración de gas en el aire de la casa.\n"
@@ -136,22 +142,25 @@ async def _llm_deduce(message: str, ollama_client) -> dict:
         "Herramientas disponibles:\n"
         "- activate_led_alerta(estado: bool) — encender/apagar LED de alerta\n"
         "- activate_led_puerta(accion: ON/OFF) — abrir/cerrar puerta\n"
-        "- trigger_camera(duracion: int) — activar cámara para ver la puerta\n"
+        "- trigger_camera(duracion: int) — activar cámara para ver quién está en la puerta\n"
         "- send_notification(mensaje: str) — enviar notificación por Telegram\n"
         "- silence_alerts() — silenciar todas las alarmas\n"
         "- get_sensor_state() — leer todos los sensores (temp, hum, gas, ruido)\n"
         "- get_system_status() — estado de LEDs y alertas\n"
         "- query_history(from, to, limit) — consultar historial de lecturas\n\n"
-        "Mapeo de intenciones comunes (usá estas palabras clave como guía):\n"
-        "- Verbos de acción como prender, apagar, activar, desactivar, encender,\n"
-        "  silenciar, abrir, cerrar, mirar, ver, fijarse, notificar, avisar, capturar\n"
-        "  → intent='direct_action', tool=la herramienta correspondiente\n"
-        "- Palabras interrogativas como qué, cuál, cómo, cuánto, dónde,\n"
-        "  o términos como temperatura, humedad, gas, ruido, estado, sensor,\n"
-        "  historial, registro, nivel, calor, frío, seguro, peligro\n"
-        "  → intent='query', tool=get_sensor_state o query_history o get_system_status\n"
+        "Guía de clasificación por tipo de palabra:\n"
+        "- Verbos de acción (prender, apagar, activar, abrir, cerrar, mirar, ver,\n"
+        "  fijarse, revisar, chequear, comprobar, verificar, inspeccionar,\n"
+        "  notificar, avisar, silenciar, capturar, grabar, fotografiar)\n"
+        "  → intent='direct_action', tool=la herramienta que corresponda\n"
+        "- Palabras interrogativas (qué, cuál, cómo, cuánto, dónde)\n"
+        "  o términos de estado (temperatura, humedad, gas, ruido, estado,\n"
+        "  historial, registro, nivel, seguro, peligro, calor, frío)\n"
+        "  → intent='query', tool=get_sensor_state o get_system_status o query_history\n"
+        "- Si el mensaje tiene TANTO una palabra de acción COMO una interrogativa,\n"
+        "  ganan los verbos de acción → intent='direct_action'\n"
         "- Comandos como /entendido, /status, /ayuda → intent='command'\n"
-        "- Mensajes que no encajan claramente → intent='ambiguous'\n\n"
+        "- Mensajes que no encajan claramente en ninguna categoría → intent='ambiguous'\n\n"
         "Respondé SOLO con este JSON exacto, sin explicaciones ni markdown:\n"
         '{"intent":"direct_action|query|command|ambiguous",'
         '"tool":"nombre_o_null","tool_args":{},"reasoning":"breve"}'
