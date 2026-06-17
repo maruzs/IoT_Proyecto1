@@ -565,16 +565,25 @@ async def query_handler_node(state: SmartHomeState) -> dict:
 
     # ── Normal query → LLM natural language ──
 
-    # Build prompt for LLM
+    system_prompt = (
+        "Sos el asistente virtual de una casa inteligente (SmartHome equipo69).\n"
+        "Tu tarea es responder preguntas del usuario sobre el estado del hogar.\n\n"
+        "Reglas:\n"
+        "- Respondé en español, en lenguaje natural, 1 a 3 frases máximo\n"
+        "- Mencioná los valores concretos de los sensores cuando sea relevante\n"
+        "- Si algo está fuera de rango, avisá con claridad y sugerí acciones\n"
+        "- Si el usuario pregunta por seguridad (gas, humo, etc.), sé preciso\n"
+        "- No inventes capacidades que el sistema no tiene\n"
+        "- Si no tenés información suficiente, decilo honestamente"
+    )
+
     user_prompt = (
         f"El usuario preguntó: \"{user_question}\"\n\n"
         f"Datos actuales de los sensores:\n"
         f"- Temperatura: {temp}°C\n"
         f"- Humedad: {hum}%\n"
         f"- Gas: {gas} ppm\n"
-        f"- Ruido: {sound} dB\n\n"
-        f"Respondé en español en lenguaje natural, en una o dos frases. "
-        f"Si hay algo fuera de lo normal, avisá."
+        f"- Ruido: {sound} dB"
     )
 
     # Lazy import to avoid circular deps (same pattern as deciding_node)
@@ -589,7 +598,10 @@ async def query_handler_node(state: SmartHomeState) -> dict:
             timeout=_settings.OLLAMA_TIMEOUT,
             max_retries=1,
         )
-        raw = await asyncio.wait_for(ollama.generate(user_prompt, format_json=False), timeout=60.0)
+        raw = await asyncio.wait_for(
+            ollama.generate(user_prompt, system_prompt=system_prompt, format_json=False),
+            timeout=60.0,
+        )
         await ollama.close()
         response_text = raw.strip()
     except (asyncio.TimeoutError, OllamaError, Exception) as exc:

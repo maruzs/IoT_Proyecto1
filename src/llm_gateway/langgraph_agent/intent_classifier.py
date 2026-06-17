@@ -115,23 +115,29 @@ async def classify(message: str, ollama_client: Optional[object] = None) -> dict
 
 
 async def _llm_deduce(message: str, ollama_client) -> dict:
-    """Ask the LLM to deduce the user's intent and the corresponding MCP tool + args.
-
-    Available tools: activate_led_alerta(estado: bool), activate_led_puerta(accion: ON/OFF),
-    trigger_camera(duracion: int), send_notification(mensaje: str), silence_alerts(),
-    get_sensor_state(), get_system_status(), query_history(from, to, limit).
-    """
-    prompt = (
-        "Clasificá este mensaje SmartHome. Herramientas: activate_led_alerta(estado), "
-        "activate_led_puerta(accion ON/OFF), trigger_camera(duracion), send_notification(mensaje), "
-        "silence_alerts(), get_sensor_state(), get_system_status(), query_history(from,to,limit).\n"
-        f"Mensaje: \"{message}\"\n"
-        'Respondé SOLO JSON: {"intent":"direct_action|query|command|ambiguous",'
+    """Ask the LLM to deduce the user's intent and the corresponding MCP tool + args."""
+    system_prompt = (
+        "Sos un clasificador de intenciones para un sistema SmartHome (equipo69).\n"
+        "Tu única tarea es clasificar el mensaje del usuario en UNA categoría "
+        "y devolver la herramienta MCP correspondiente.\n\n"
+        "Herramientas disponibles:\n"
+        "- activate_led_alerta(estado: bool) — encender/apagar LED de alerta\n"
+        "- activate_led_puerta(accion: ON/OFF) — abrir/cerrar puerta\n"
+        "- trigger_camera(duracion: int) — activar cámara\n"
+        "- send_notification(mensaje: str) — enviar notificación\n"
+        "- silence_alerts() — silenciar alarmas\n"
+        "- get_sensor_state() — leer sensores (temperatura, humedad, gas, ruido)\n"
+        "- get_system_status() — estado del sistema\n"
+        "- query_history(from, to, limit) — consultar historial\n\n"
+        "Respondé SOLO con este JSON exacto, sin explicaciones ni markdown:\n"
+        '{"intent":"direct_action|query|command|ambiguous",'
         '"tool":"nombre_o_null","tool_args":{},"reasoning":"breve"}'
     )
+
+    user_prompt = f'Mensaje del usuario: "{message}"'
     try:
         raw = await asyncio.wait_for(
-            ollama_client.generate(prompt, format_json=True),
+            ollama_client.generate(user_prompt, system_prompt=system_prompt, format_json=True),
             timeout=25.0,
         )
         # Try to parse as JSON
