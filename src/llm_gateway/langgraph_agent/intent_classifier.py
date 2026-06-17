@@ -155,7 +155,7 @@ async def _llm_deduce(message: str, ollama_client) -> dict:
     try:
         raw = await asyncio.wait_for(
             ollama_client.generate(user_prompt, system_prompt=system_prompt, format_json=True),
-            timeout=25.0,
+            timeout=45.0,
         )
         # Try to parse as JSON
         import json as _json
