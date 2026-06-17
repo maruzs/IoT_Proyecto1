@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import datetime
 
@@ -119,5 +120,232 @@ async def evaluating_node(state: SmartHomeState) -> dict:
         result["normal_readings"] = 0
     else:
         result["normal_readings"] = state.get("normal_readings", 0) + 1
+
+    return result
+
+
+def _deterministic_fallback(state: SmartHomeState, error_type: str) -> dict:
+    """Build a deterministic decision when LLM is unavailable or times out."""
+    gas_ppm = state.get("gas_ppm", 0)
+    temperature = state.get("temperature", 0.0)
+    now = datetime.now().isoformat()
+
+    if gas_ppm > 1020 or temperature > 30.0:
+        nivel = "critico"
+        actions = [
+            {"tool": "activate_led_alerta", "args": {"estado": True}},
+            {"tool": "send_notification", "args": {"mensaje": f"⚠️ CRÍTICO: Gas {gas_ppm} ppm / Temp {temperature}°C"}},
+        ]
+    elif gas_ppm > 800 or temperature > 28.0:
+        nivel = "alto"
+        actions = [
+            {"tool": "send_notification", "args": {"mensaje": f"⚠️ ALTO: Gas {gas_ppm} ppm / Temp {temperature}°C"}},
+        ]
+    elif gas_ppm > 400:
+        nivel = "medio"
+        actions = [
+            {"tool": "send_notification", "args": {"mensaje": f"⚠️ MEDIO: Gas {gas_ppm} ppm"}},
+        ]
+    else:
+        nivel = "normal"
+        actions = []
+
+    llm_decision = {
+        "nivel": nivel,
+        "razonamiento": f"Fallback determinístico ({error_type}): umbral automático aplicado.",
+        "acciones": actions,
+        "confidence": 1.0,
+        "timestamp": now,
+    }
+
+    pending_actions = actions if nivel != "normal" else []
+
+    return {
+        "llm_decision": llm_decision,
+        "pending_actions": pending_actions,
+        "needs_confirmation": False,
+        "error_type": error_type,
+    }
+
+
+async def deciding_node(
+    state: SmartHomeState,
+    ollama_client=None,
+    prompt_builder_fn=None,
+) -> dict:
+    """Query Ollama for a severity decision with 3s timeout and deterministic fallback."""
+    # Lazy imports to avoid circular dependencies at module level
+    if ollama_client is None:
+        from ..ollama_client import OllamaClient
+        from ..config import Settings
+
+        _settings = Settings()
+        ollama_client = OllamaClient(
+            base_url=_settings.OLLAMA_URL,
+            model=_settings.OLLAMA_MODEL,
+            timeout=_settings.OLLAMA_TIMEOUT,
+            max_retries=_settings.MAX_RETRIES,
+        )
+        client_created = True
+    else:
+        client_created = False
+
+    if prompt_builder_fn is None:
+        from ..prompt_builder import build_decision_prompt
+
+        prompt_builder_fn = build_decision_prompt
+
+    sensor_context = {
+        "temperature": state.get("temperature", 0.0),
+        "humidity": state.get("humidity", 0.0),
+        "gas_ppm": state.get("gas_ppm", 0),
+        "sound_db": state.get("sound_db", 0.0),
+        "sensor_ts": state.get("sensor_ts", ""),
+    }
+
+    user_prompt, system_prompt = prompt_builder_fn(sensor_context)
+
+    try:
+        raw_response = await asyncio.wait_for(
+            ollama_client.generate(user_prompt, system_prompt),
+            timeout=3.0,
+        )
+    except asyncio.TimeoutError:
+        logger.warning("LLM decision timed out after 3s, using deterministic fallback")
+        if client_created:
+            await ollama_client.close()
+        return _deterministic_fallback(state, error_type="llm_timeout")
+    except Exception as exc:
+        logger.warning("LLM decision failed: %s, using deterministic fallback", exc)
+        if client_created:
+            await ollama_client.close()
+        return _deterministic_fallback(state, error_type="llm_error")
+    finally:
+        if client_created:
+            await ollama_client.close()
+
+    from ..json_validator import extract_json
+
+    parsed = extract_json(raw_response)
+    if parsed is None:
+        logger.warning("LLM returned invalid JSON, using deterministic fallback")
+        return _deterministic_fallback(state, error_type="llm_error")
+
+    # Normalize field names — spec expects nivel/razonamiento/acciones,
+    # prompt_builder may return action/reason
+    nivel = parsed.get("nivel") or parsed.get("action") or "normal"
+    razonamiento = parsed.get("razonamiento") or parsed.get("reason") or ""
+    confidence = float(parsed.get("confidence", 0.0))
+
+    # Normalize acciones — may be a list of dicts, a list of strings, or a single string
+    raw_acciones = parsed.get("acciones") or parsed.get("actions") or []
+    if isinstance(raw_acciones, str):
+        raw_acciones = [raw_acciones] if raw_acciones else []
+
+    acciones: list[dict] = []
+    for item in raw_acciones:
+        if isinstance(item, dict) and "tool" in item:
+            acciones.append(item)
+        elif isinstance(item, str) and item != "no_action":
+            acciones.append({"tool": item, "args": {}})
+
+    now = datetime.now().isoformat()
+    llm_decision = {
+        "nivel": nivel,
+        "razonamiento": razonamiento,
+        "acciones": acciones,
+        "confidence": confidence,
+        "timestamp": now,
+    }
+
+    # Build pending_actions from acciones (skip no_action)
+    pending_actions = acciones.copy()
+
+    # If the LLM explicitly says no_action, clear pending_actions
+    if isinstance(parsed.get("action"), str) and parsed["action"] == "no_action":
+        pending_actions = []
+    if isinstance(parsed.get("nivel"), str) and parsed["nivel"] == "normal":
+        pending_actions = []
+
+    needs_confirmation = False
+    if confidence < 0.8 and nivel != "normal" and pending_actions:
+        needs_confirmation = True
+
+    return {
+        "llm_decision": llm_decision,
+        "pending_actions": pending_actions,
+        "needs_confirmation": needs_confirmation,
+        "error_type": None,
+    }
+
+
+async def executing_node(state: SmartHomeState) -> dict:
+    """Execute pending actions via MCP sequentially."""
+    pending_actions = state.get("pending_actions", [])
+    if not pending_actions:
+        return {"mcp_results": [], "error_type": None, "retry_count": 0}
+
+    mcp_client = MCPClient(url=settings.mcp_server_url)
+    mcp_results: list[dict] = []
+    retry_count = state.get("retry_count", 0)
+
+    for action in pending_actions:
+        tool_name = action.get("tool")
+        args = action.get("args", {})
+        if not tool_name:
+            continue
+
+        try:
+            result = await mcp_client.call_tool(tool_name, args)
+            mcp_results.append({
+                "tool": tool_name,
+                "success": True,
+                "result": result,
+                "error": None,
+            })
+        except Exception as exc:
+            logger.warning("MCP tool call failed for %s: %s", tool_name, exc)
+            mcp_results.append({
+                "tool": tool_name,
+                "success": False,
+                "result": {},
+                "error": str(exc),
+            })
+            return {
+                "mcp_results": mcp_results,
+                "error_type": "mcp_execution_fail",
+                "retry_count": retry_count + 1,
+            }
+
+    return {
+        "mcp_results": mcp_results,
+        "error_type": None,
+        "retry_count": 0,
+    }
+
+
+async def notifying_node(state: SmartHomeState) -> dict:
+    """Prepare notification payload and reset state after a successful cycle."""
+    llm_decision = state.get("llm_decision", {})
+    mcp_results = state.get("mcp_results", [])
+
+    notification_payload = {
+        "nivel": llm_decision.get("nivel", "normal"),
+        "razonamiento": llm_decision.get("razonamiento", ""),
+        "acciones": llm_decision.get("acciones", []),
+        "timestamp": llm_decision.get("timestamp", datetime.now().isoformat()),
+        "mcp_results": mcp_results,
+    }
+
+    result: dict = {
+        "notification_payload": notification_payload,
+        "notification_ready": True,
+    }
+
+    if state.get("critical_active"):
+        result["normal_readings"] = 0
+
+    if state.get("mode") != "active":
+        result["mode"] = "active"
 
     return result
