@@ -298,6 +298,44 @@ async def test_user_command_end_to_end(mock_mcp_client, base_state):
     assert "silenciadas" in result["notification_payload"]["razonamiento"].lower()
 
 
+@pytest.mark.asyncio
+async def test_critical_overrides_silenced(mock_mcp_client, base_state):
+    """Trace 4: Silenced mode + gas>1020 → critical override → immediate action → MQTT."""
+    async def _side_effect(name, arguments=None):
+        if name == "get_sensor_state":
+            return {"temperature": 25.0, "humidity": 50.0, "gas_ppm": 1100, "sound_db": 30.0}
+        if name == "activate_led_alerta":
+            return {"success": True}
+        if name == "send_notification":
+            return {"success": True}
+        if name == "trigger_camera":
+            return {"success": True}
+        return {"success": True}
+
+    mock_mcp_client.return_value.call_tool.side_effect = _side_effect
+
+    # Start in silenced mode with critical gas
+    state = {**base_state, "mode": "silenced", "normal_readings": 1}
+    config = {"configurable": {"thread_id": "test-silenced-override"}}
+    result = await agent.ainvoke(state, config)
+
+    # Silenced must be overridden — critical handler takes over
+    assert result["critical_active"] is True
+    assert result["llm_decision"]["nivel"] == "critico"
+    assert result["llm_decision"]["confidence"] == 1.0  # deterministic, no LLM
+
+    # Verify critical actions were called via MCP
+    calls = mock_mcp_client.return_value.call_tool.call_args_list
+    tool_names = [c.args[0] for c in calls]
+    assert "activate_led_alerta" in tool_names
+    assert "send_notification" in tool_names
+
+    # MQTT payload must reflect the critical override
+    assert result["notification_payload"] is not None
+    assert result["notification_payload"]["nivel"] == "critico"
+    assert "1100" in result["notification_payload"]["razonamiento"]
+
+
 # ──────────────────────────────────────────────────────────────
 # API endpoint MQTT verification (user explicit requirement)
 # ──────────────────────────────────────────────────────────────

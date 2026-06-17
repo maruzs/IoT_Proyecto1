@@ -79,7 +79,7 @@
     {
         "id": "ui_group_security",
         "type": "ui_group",
-        "name": "Seguridad y C\u00e1mara (ESP32-CAM)",
+        "name": "Seguridad y Cámara (ESP32-CAM)",
         "tab": "ui_tab_main",
         "order": 3,
         "disp": true,
@@ -270,7 +270,7 @@
         "height": 3,
         "gtype": "gage",
         "title": "Temperatura",
-        "label": "\u00b0C",
+        "label": "°C",
         "format": "{{value}}",
         "min": 0,
         "max": "50",
@@ -364,7 +364,7 @@
         "id": "ui_chart_temp",
         "type": "ui_chart",
         "z": "f6f2187d.f17ca8",
-        "name": "Gr\u00e1fico de Temp",
+        "name": "Gráfico de Temp",
         "group": "ui_group_charts",
         "order": 1,
         "width": 6,
@@ -481,7 +481,7 @@
         "height": 1,
         "passthru": false,
         "label": "Capturar Foto manual",
-        "tooltip": "Mandar comando de captura a la c\u00e1mara",
+        "tooltip": "Mandar comando de captura a la cámara",
         "color": "",
         "bgcolor": "",
         "className": "",
@@ -532,7 +532,7 @@
         "id": "mqtt_out_camara_control",
         "type": "mqtt out",
         "z": "f6f2187d.f17ca8",
-        "name": "Publicar control C\u00e1mara",
+        "name": "Publicar control Cámara",
         "topic": "smarthome/equipo69/camara/control",
         "qos": "0",
         "retain": "false",
@@ -570,8 +570,8 @@
         "id": "process_vision_data",
         "type": "function",
         "z": "f6f2187d.f17ca8",
-        "name": "Procesar Visi\u00f3n",
-        "func": "var human = msg.payload.human; // true / false\nvar faces = msg.payload.faces; // Array de nombres\n\nvar presenceText = human ? \"DETECTADO\" : \"Nadie en c\u00e1mara\";\nvar facesText = (faces && faces.length > 0) ? faces.join(\", \") : \"Ninguno\";\n\nreturn [\n    { payload: presenceText },\n    { payload: facesText },\n    { payload: human ? \"#ff3333\" : \"#33cc33\" }\n];",
+        "name": "Procesar Visión",
+        "func": "var human = msg.payload.human; // true / false\nvar faces = msg.payload.faces; // Array de nombres\n\nvar presenceText = human ? \"DETECTADO\" : \"Nadie en cámara\";\nvar facesText = (faces && faces.length > 0) ? faces.join(\", \") : \"Ninguno\";\n\nreturn [\n    { payload: presenceText },\n    { payload: facesText },\n    { payload: human ? \"#ff3333\" : \"#33cc33\" }\n];",
         "outputs": 3,
         "noerr": 0,
         "initialize": "",
@@ -703,11 +703,11 @@
         "id": "rules_evaluator",
         "type": "function",
         "z": "f6f2187d.f17ca8",
-        "name": "Reglas de Control Autom\u00e1tico",
-"func": "var temp = msg.payload.temperatura;\nvar gas = msg.payload.gas;\nvar alertTriggered = false;\nvar alertMsg = \"\";\n\nif (temp && temp > 30) {\n    alertTriggered = true;\n    alertMsg += \"\u26a0\ufe0f \u00a1Temperatura cr\u00edtica: \" + temp + \"\u00b0C!\\n\";\n}\n\nif (gas && gas > 1020) {\n    alertTriggered = true;\n    alertMsg += \"\ud83d\udd25 \u00a1Alerta de Gas detectada: \" + gas + \" ppm!\\n\";\n}\n\nif (alertTriggered) {\n    context.set(\"normal_count\", 0);\n    var telegramMsg = {\n        payload: {\n            chatId: -1003906928304,\n            type: \"message\",\n            content: \"\ud83d\udea8 *[SmartHome ALERTA]*\\n\\n\" + alertMsg + \"\\n*Timestamp:* \" + new Date().toLocaleString()\n        }\n    };\n    return [\n        { payload: \"ON\" },\n        telegramMsg\n    ];\n} else {\n    var count = (context.get(\"normal_count\") || 0) + 1;\n    context.set(\"normal_count\", count);\n    if (count >= 3) {\n        context.set(\"normal_count\", 0);\n        return [\n            { payload: \"OFF\" },\n            null\n        ];\n    }\n    return [null, null];\n}",
-"outputs": 2,
-"noerr": 0,
-"initialize": "context.set('normal_count', 0);",
+        "name": "Reglas de Control Automático",
+        "func": "var temp = msg.payload.temperatura;\nvar gas = msg.payload.gas;\nvar alertTriggered = false;\nvar alertMsg = \"\";\n\nif (temp && temp > 30) {\n    alertTriggered = true;\n    alertMsg += \"⚠️ ¡Temperatura crítica: \" + temp + \"°C!\\n\";\n}\n\nif (gas && gas > 1020) {\n    alertTriggered = true;\n    alertMsg += \"🔥 ¡Alerta de Gas detectada: \" + gas + \" ppm!\\n\";\n}\n\nif (alertTriggered) {\n    context.set(\"normal_count\", 0);\n    var telegramMsg = {\n        payload: {\n            chatId: -1003906928304,\n            type: \"message\",\n            content: \"🚨 *[SmartHome ALERTA]*\\n\\n\" + alertMsg + \"\\n*Timestamp:* \" + new Date().toLocaleString()\n        }\n    };\n    return [\n        { payload: \"ON\" },\n        telegramMsg\n    ];\n} else {\n    var count = (context.get(\"normal_count\") || 0) + 1;\n    context.set(\"normal_count\", count);\n    if (count >= 3) {\n        context.set(\"normal_count\", 0);\n        return [\n            { payload: \"OFF\" },\n            null\n        ];\n    }\n    return [null, null];\n}",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "context.set('normal_count', 0);",
         "finalize": "",
         "libs": [],
         "x": 390,
@@ -744,7 +744,7 @@
         "type": "function",
         "z": "f6f2187d.f17ca8",
         "name": "Router de Comandos",
-        "func": "var command = msg.payload.content || msg.payload.text;\nvar chatId = msg.payload.chatId || (msg.payload.chat && msg.payload.chat.id) || msg.chatId;\n\n// Debug de entrada en consola de Node-RED\nnode.log(\"Recibido comando: \" + command + \" de chatId: \" + chatId);\n\nif (command === \"/status\") {\n    var temp = global.get(\"last_temp\") || \"No disponible\";\n    var hum = global.get(\"last_hum\") || \"No disponible\";\n    var gas = global.get(\"last_gas\") || \"No disponible\";\n    var sound = global.get(\"last_sound\") || \"No disponible\";\n    \n    msg.payload = {\n        chatId: chatId,\n        type: \"message\",\n        content: \"\ud83d\udcca *SmartHome Status*\\n\\n\" +\n                 \"\ud83c\udf21\ufe0f *Temp:* \" + temp + \" \u00b0C\\n\" +\n                 \"\ud83d\udca7 *Humedad:* \" + hum + \" %\\n\" +\n                 \"\ud83d\udd25 *Gas (MQ-2):* \" + gas + \" ppm\\n\" +\n                 \"\ud83d\udd0a *Sonido:* \" + sound + \"\\n\\n\" +\n                 \"*Timestamp:* \" + new Date().toLocaleString()\n    };\n    node.log(\"Respondiendo con status a: \" + chatId);\n    return [msg, null];\n} else if (command === \"/ayuda\" || command === \"/start\") {\n    msg.payload = {\n        chatId: chatId,\n        type: \"message\",\n        content: \"\ud83e\udd16 *SmartHome Bot*\\n\\n\" +\n                 \"Comandos disponibles:\\n\" +\n                 \"\ud83d\udd39 `/status` - Muestra lecturas en tiempo real\\n\" +\n                 \"\ud83d\udd39 `/ayuda` - Lista los comandos\\n\" +\n                 \"\ud83d\udd39 `/entendido` o `/noted` - Apaga el LED y Zumbador de alerta\"\n    };\n    node.log(\"Respondiendo con ayuda a: \" + chatId);\n    return [msg, null];\n} else if (command === \"/entendido\" || command === \"/noted\") {\n    // Responder en Telegram confirmando el comando\n    msg.payload = {\n        chatId: chatId,\n        type: \"message\",\n        content: \"\u2705 *Alerta confirmada.* Se ha enviado la orden para apagar el LED y el Zumbador de alerta.\"\n    };\n    \n    // Payload para apagar los actuadores v\u00eda MQTT\n    var actuatorMsg = {\n        payload: \"OFF\"\n    };\n    \n    node.log(\"Silenciando alertas desde Telegram a peticion de: \" + chatId);\n    return [msg, actuatorMsg];\n}\nnode.log(\"Comando desconocido ignorado.\");\nreturn null;",
+        "func": "var command = msg.payload.content || msg.payload.text;\nvar chatId = msg.payload.chatId || (msg.payload.chat && msg.payload.chat.id) || msg.chatId;\n\n// Debug de entrada en consola de Node-RED\nnode.log(\"Recibido comando: \" + command + \" de chatId: \" + chatId);\n\nif (command === \"/status\") {\n    var temp = global.get(\"last_temp\") || \"No disponible\";\n    var hum = global.get(\"last_hum\") || \"No disponible\";\n    var gas = global.get(\"last_gas\") || \"No disponible\";\n    var sound = global.get(\"last_sound\") || \"No disponible\";\n    \n    msg.payload = {\n        chatId: chatId,\n        type: \"message\",\n        content: \"📊 *SmartHome Status*\\n\\n\" +\n                 \"🌡️ *Temp:* \" + temp + \" °C\\n\" +\n                 \"💧 *Humedad:* \" + hum + \" %\\n\" +\n                 \"🔥 *Gas (MQ-2):* \" + gas + \" ppm\\n\" +\n                 \"🔊 *Sonido:* \" + sound + \"\\n\\n\" +\n                 \"*Timestamp:* \" + new Date().toLocaleString()\n    };\n    node.log(\"Respondiendo con status a: \" + chatId);\n    return [msg, null];\n} else if (command === \"/ayuda\" || command === \"/start\") {\n    msg.payload = {\n        chatId: chatId,\n        type: \"message\",\n        content: \"🤖 *SmartHome Bot*\\n\\n\" +\n                 \"Comandos disponibles:\\n\" +\n                 \"🔹 `/status` - Muestra lecturas en tiempo real\\n\" +\n                 \"🔹 `/ayuda` - Lista los comandos\\n\" +\n                 \"🔹 `/entendido` o `/noted` - Apaga el LED y Zumbador de alerta\"\n    };\n    node.log(\"Respondiendo con ayuda a: \" + chatId);\n    return [msg, null];\n} else if (command === \"/entendido\" || command === \"/noted\") {\n    // Responder en Telegram confirmando el comando\n    msg.payload = {\n        chatId: chatId,\n        type: \"message\",\n        content: \"✅ *Alerta confirmada.* Se ha enviado la orden para apagar el LED y el Zumbador de alerta.\"\n    };\n    \n    // Payload para apagar los actuadores vía MQTT\n    var actuatorMsg = {\n        payload: \"OFF\"\n    };\n    \n    node.log(\"Silenciando alertas desde Telegram a peticion de: \" + chatId);\n    return [msg, actuatorMsg];\n}\nnode.log(\"Comando desconocido ignorado.\");\nreturn null;",
         "outputs": 2,
         "noerr": 0,
         "initialize": "",
@@ -801,7 +801,7 @@
         "props": [
             {
                 "p": "payload",
-                "v": "{\"chatId\":1511171371,\"type\":\"message\",\"content\":\"\ud83d\udd14 Prueba de inyecci\u00f3n manual desde Node-RED\"}",
+                "v": "{\"chatId\":1511171371,\"type\":\"message\",\"content\":\"🔔 Prueba de inyección manual desde Node-RED\"}",
                 "vt": "json"
             }
         ],
@@ -852,6 +852,494 @@
         "broker": "mqtt_broker_config",
         "x": 630,
         "y": 300,
+        "wires": []
+    },
+    {
+        "id": "http_in_sensors",
+        "type": "http in",
+        "z": "f6f2187d.f17ca8",
+        "name": "GET /api/sensors",
+        "url": "/api/sensors",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 920,
+        "wires": [
+            [
+                "func_sensors_reader"
+            ]
+        ]
+    },
+    {
+        "id": "http_in_status",
+        "type": "http in",
+        "z": "f6f2187d.f17ca8",
+        "name": "GET /api/status",
+        "url": "/api/status",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 960,
+        "wires": [
+            [
+                "func_status_reader"
+            ]
+        ]
+    },
+    {
+        "id": "http_in_history",
+        "type": "http in",
+        "z": "f6f2187d.f17ca8",
+        "name": "GET /api/history",
+        "url": "/api/history",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 1000,
+        "wires": [
+            [
+                "func_history_parser"
+            ]
+        ]
+    },
+    {
+        "id": "http_in_led_alerta",
+        "type": "http in",
+        "z": "f6f2187d.f17ca8",
+        "name": "POST /api/actuators/led-alerta",
+        "url": "/api/actuators/led-alerta",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 1040,
+        "wires": [
+            [
+                "func_input_validator"
+            ]
+        ]
+    },
+    {
+        "id": "http_in_led_puerta",
+        "type": "http in",
+        "z": "f6f2187d.f17ca8",
+        "name": "POST /api/actuators/led-puerta",
+        "url": "/api/actuators/led-puerta",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 1080,
+        "wires": [
+            [
+                "func_input_validator"
+            ]
+        ]
+    },
+    {
+        "id": "http_in_notifications",
+        "type": "http in",
+        "z": "f6f2187d.f17ca8",
+        "name": "POST /api/notifications",
+        "url": "/api/notifications",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 1120,
+        "wires": [
+            [
+                "func_input_validator"
+            ]
+        ]
+    },
+    {
+        "id": "http_in_silence",
+        "type": "http in",
+        "z": "f6f2187d.f17ca8",
+        "name": "POST /api/alerts/silence",
+        "url": "/api/alerts/silence",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 1160,
+        "wires": [
+            [
+                "func_silence_alerts"
+            ]
+        ]
+    },
+    {
+        "id": "http_in_camera_trigger",
+        "type": "http in",
+        "z": "f6f2187d.f17ca8",
+        "name": "POST /api/camera/trigger",
+        "url": "/api/camera/trigger",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 1200,
+        "wires": [
+            [
+                "func_input_validator"
+            ]
+        ]
+    },
+    {
+        "id": "http_res_sensors",
+        "type": "http response",
+        "z": "f6f2187d.f17ca8",
+        "name": "Response /api/sensors",
+        "statusCode": "",
+        "headers": {},
+        "x": 900,
+        "y": 920,
+        "wires": []
+    },
+    {
+        "id": "http_res_status",
+        "type": "http response",
+        "z": "f6f2187d.f17ca8",
+        "name": "Response /api/status",
+        "statusCode": "",
+        "headers": {},
+        "x": 900,
+        "y": 960,
+        "wires": []
+    },
+    {
+        "id": "http_res_history",
+        "type": "http response",
+        "z": "f6f2187d.f17ca8",
+        "name": "Response /api/history",
+        "statusCode": "",
+        "headers": {},
+        "x": 900,
+        "y": 1000,
+        "wires": []
+    },
+    {
+        "id": "http_res_led_alerta",
+        "type": "http response",
+        "z": "f6f2187d.f17ca8",
+        "name": "Response /api/actuators/led-alerta",
+        "statusCode": "",
+        "headers": {},
+        "x": 900,
+        "y": 1040,
+        "wires": []
+    },
+    {
+        "id": "http_res_led_puerta",
+        "type": "http response",
+        "z": "f6f2187d.f17ca8",
+        "name": "Response /api/actuators/led-puerta",
+        "statusCode": "",
+        "headers": {},
+        "x": 900,
+        "y": 1080,
+        "wires": []
+    },
+    {
+        "id": "http_res_notifications",
+        "type": "http response",
+        "z": "f6f2187d.f17ca8",
+        "name": "Response /api/notifications",
+        "statusCode": "",
+        "headers": {},
+        "x": 900,
+        "y": 1120,
+        "wires": []
+    },
+    {
+        "id": "http_res_silence",
+        "type": "http response",
+        "z": "f6f2187d.f17ca8",
+        "name": "Response /api/alerts/silence",
+        "statusCode": "",
+        "headers": {},
+        "x": 900,
+        "y": 1160,
+        "wires": []
+    },
+    {
+        "id": "http_res_camera_trigger",
+        "type": "http response",
+        "z": "f6f2187d.f17ca8",
+        "name": "Response /api/camera/trigger",
+        "statusCode": "",
+        "headers": {},
+        "x": 900,
+        "y": 1200,
+        "wires": []
+    },
+    {
+        "id": "func_sensors_reader",
+        "type": "function",
+        "z": "f6f2187d.f17ca8",
+        "name": "Sensors Reader",
+        "func": "var temp = global.get(\"last_temp\");\nvar hum = global.get(\"last_hum\");\nvar gas = global.get(\"last_gas\");\nvar sound = global.get(\"last_sound\");\n\nif (temp === undefined || hum === undefined || gas === undefined || sound === undefined) {\n    msg.statusCode = 503;\n    msg.payload = {error: \"sensor_data_unavailable\"};\n} else {\n    msg.statusCode = 200;\n    msg.payload = {\n        temperatura: temp,\n        humedad: hum,\n        gas: gas,\n        sonido: sound\n    };\n}\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 520,
+        "y": 920,
+        "wires": [
+            [
+                "http_res_sensors"
+            ]
+        ]
+    },
+    {
+        "id": "func_status_reader",
+        "type": "function",
+        "z": "f6f2187d.f17ca8",
+        "name": "System Status Reader",
+        "func": "var led = flow.get(\"led_state\") || \"OFF\";\nvar alert = flow.get(\"alert_state\") || \"OFF\";\n\nmsg.statusCode = 200;\nmsg.payload = {\n    led_state: led,\n    alert_state: alert,\n    caveat: \"logical state only\"\n};\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 520,
+        "y": 960,
+        "wires": [
+            [
+                "http_res_status"
+            ]
+        ]
+    },
+    {
+        "id": "func_history_parser",
+        "type": "function",
+        "z": "f6f2187d.f17ca8",
+        "name": "CSV History Parser",
+        "func": "var fs = global.get(\"fs\");\nvar path = \"/data/historial.csv\";\n\nvar fromParam = (msg.payload && msg.payload.from) || (msg.req.query && msg.req.query.from);\nvar toParam = (msg.payload && msg.payload.to) || (msg.req.query && msg.req.query.to);\nvar limitParam = (msg.payload && msg.payload.limit) || (msg.req.query && msg.req.query.limit);\n\ntry {\n    if (!fs.existsSync(path)) {\n        msg.statusCode = 503;\n        msg.payload = {error: \"historial_no_disponible\"};\n        return msg;\n    }\n    \n    var data = fs.readFileSync(path, \"utf8\");\n    var lines = data.trim().split(\"\\n\");\n    \n    if (lines.length < 2) {\n        msg.statusCode = 200;\n        msg.payload = [];\n        return msg;\n    }\n    \n    var fromTime = fromParam ? new Date(fromParam) : null;\n    var toTime = toParam ? new Date(toParam) : null;\n    var limit = parseInt(limitParam) || 100;\n    \n    var rows = [];\n    for (var i = 1; i < lines.length && rows.length < limit; i++) {\n        var cols = lines[i].split(\",\");\n        if (cols.length < 5) continue;\n        \n        var ts = new Date(cols[0]);\n        if (isNaN(ts.getTime())) continue;\n        \n        if (fromTime && ts < fromTime) continue;\n        if (toTime && ts > toTime) continue;\n        \n        rows.push({\n            timestamp: cols[0],\n            temperatura: parseFloat(cols[1]) || null,\n            humedad: parseFloat(cols[2]) || null,\n            gas: parseFloat(cols[3]) || null,\n            sensor_extra: cols[4] || null,\n            alerta: cols[5] || \"NORMAL\"\n        });\n    }\n    \n    msg.statusCode = 200;\n    msg.payload = rows;\n} catch (e) {\n    msg.statusCode = 500;\n    msg.payload = {error: \"parse_error\", details: e.message};\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 520,
+        "y": 1000,
+        "wires": [
+            [
+                "http_res_history"
+            ]
+        ]
+    },
+    {
+        "id": "func_input_validator",
+        "type": "function",
+        "z": "f6f2187d.f17ca8",
+        "name": "Input Validator",
+        "func": "function cloneMsg(p) {\n    return {\n        payload: p,\n        req: msg.req,\n        res: msg.res,\n        _msgid: msg._msgid\n    };\n}\n\nvar url = msg.req.url || msg.req.originalUrl || \"\";\nvar payload = msg.payload || {};\nvar out = [null, null, null, null, null, null, null, null];\n\nfunction sendErr(status, p) {\n    msg.statusCode = status;\n    msg.payload = p;\n    if (url.indexOf(\"led-alerta\") !== -1) out[1] = msg;\n    else if (url.indexOf(\"led-puerta\") !== -1) out[3] = msg;\n    else if (url.indexOf(\"notifications\") !== -1) out[5] = msg;\n    else if (url.indexOf(\"camera\") !== -1) out[7] = msg;\n}\n\nif (typeof payload !== 'object' || payload === null) {\n    sendErr(400, {error: \"invalid_json\"});\n    return out;\n}\n\nif (url.indexOf(\"/api/actuators/led-alerta\") !== -1) {\n    if (typeof payload.estado !== 'boolean') {\n        sendErr(422, {error: \"missing_field\", field: \"estado\"});\n        return out;\n    }\n    var st = payload.estado ? \"ON\" : \"OFF\";\n    flow.set(\"led_state\", st);\n    flow.set(\"alert_state\", st);\n    out[0] = {payload: st};\n    out[1] = cloneMsg({success: true, topic: \"smarthome/equipo69/control/led\", payload: st});\n    return out;\n}\n\nif (url.indexOf(\"/api/actuators/led-puerta\") !== -1) {\n    if (typeof payload.accion !== 'string' || (payload.accion !== \"ON\" && payload.accion !== \"OFF\")) {\n        sendErr(422, {error: \"missing_field\", field: \"accion\"});\n        return out;\n    }\n    out[2] = {payload: {accion: payload.accion}};\n    out[3] = cloneMsg({success: true, topic: \"smarthome/equipo69/control/led-puerta\"});\n    return out;\n}\n\nif (url.indexOf(\"/api/notifications\") !== -1) {\n    if (typeof payload.mensaje !== 'string' || payload.mensaje.trim() === \"\") {\n        sendErr(422, {error: \"missing_field\", field: \"mensaje\"});\n        return out;\n    }\n    out[4] = {\n        payload: {\n            chatId: -1003906928304,\n            type: \"message\",\n            content: payload.mensaje\n        }\n    };\n    out[5] = cloneMsg({success: true});\n    return out;\n}\n\nif (url.indexOf(\"/api/camera/trigger\") !== -1) {\n    var dur = payload.duracion || 5;\n    if (typeof dur !== 'number' || dur < 1) {\n        sendErr(422, {error: \"missing_field\", field: \"duracion\"});\n        return out;\n    }\n    out[6] = {payload: {accion: \"iniciar_burst\", duracion: dur}};\n    out[7] = cloneMsg({success: true, duracion: dur});\n    return out;\n}\n\nsendErr(400, {error: \"invalid_request\"});\nreturn out;",
+        "outputs": 8,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 360,
+        "y": 1120,
+        "wires": [
+            [
+                "mqtt_out_led"
+            ],
+            [
+                "http_res_led_alerta"
+            ],
+            [
+                "mqtt_out_led_puerta"
+            ],
+            [
+                "http_res_led_puerta"
+            ],
+            [
+                "telegram_out"
+            ],
+            [
+                "http_res_notifications"
+            ],
+            [
+                "mqtt_out_camara_captura"
+            ],
+            [
+                "http_res_camera_trigger"
+            ]
+        ]
+    },
+    {
+        "id": "func_silence_alerts",
+        "type": "function",
+        "z": "f6f2187d.f17ca8",
+        "name": "Silence Alerts",
+        "func": "flow.set(\"led_state\", \"OFF\");\nflow.set(\"alert_state\", \"OFF\");\n\nreturn [\n    {payload: \"OFF\"},\n    {\n        payload: {success: true, silenced: [\"led_alerta\"]},\n        req: msg.req,\n        res: msg.res,\n        _msgid: msg._msgid\n    }\n];",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 360,
+        "y": 1160,
+        "wires": [
+            [
+                "mqtt_out_led"
+            ],
+            [
+                "http_res_silence"
+            ]
+        ]
+    },
+    {
+        "id": "mqtt_out_led_puerta",
+        "type": "mqtt out",
+        "z": "f6f2187d.f17ca8",
+        "name": "Publicar control LED Puerta",
+        "topic": "smarthome/equipo69/control/led-puerta",
+        "qos": "1",
+        "retain": "true",
+        "respTopic": "",
+        "contentType": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "mqtt_broker_config",
+        "x": 720,
+        "y": 1080,
+        "wires": []
+    },
+    {
+        "id": "mqtt_in_llm_decision",
+        "type": "mqtt in",
+        "z": "f6f2187d.f17ca8",
+        "name": "Suscribir a Decisiones LLM",
+        "topic": "smarthome/equipo69/llm/decision",
+        "qos": "0",
+        "datatype": "json",
+        "broker": "mqtt_broker_config",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 140,
+        "y": 1300,
+        "wires": [
+            [
+                "func_llm_decision_store"
+            ]
+        ]
+    },
+    {
+        "id": "func_llm_decision_store",
+        "type": "function",
+        "z": "f6f2187d.f17ca8",
+        "name": "Store LLM Decision",
+        "func": "var decision = msg.payload;\nif (decision && decision.nivel) {\n    flow.set(\"llm_decision\", decision);\n    var colors = {\n        critico: \"#ff3333\", alto: \"#ff9933\",\n        medio: \"#ffcc00\", bajo: \"#33cc33\", info: \"#0094CE\"\n    };\n    var color = colors[decision.nivel] || \"#0094CE\";\n    return [\n        { payload: {\n            nivel: decision.nivel,\n            razonamiento: decision.razonamiento || \"\",\n            accion: decision.accion || \"\",\n            timestamp: decision.timestamp || new Date().toISOString(),\n            color: color\n        }},\n        msg\n    ];\n}\nreturn [null, null];",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 360,
+        "y": 1300,
+        "wires": [
+            [
+                "ui_llm_decision"
+            ],
+            [
+                "debug_llm_decision"
+            ]
+        ]
+    },
+    {
+        "id": "ui_llm_decision",
+        "type": "ui_template",
+        "z": "f6f2187d.f17ca8",
+        "group": "ui_group_security",
+        "name": "LLM Decision Widget",
+        "order": 5,
+        "width": 6,
+        "height": 3,
+        "format": "<div ng-if=\"!msg.payload || !msg.payload.nivel\" style=\"display:flex;align-items:center;justify-content:center;height:100%;color:#999;font-style:italic;\">\n  Sin decisiones LLM\n</div>\n<div ng-if=\"msg.payload && msg.payload.nivel\" style=\"display:flex;flex-direction:column;height:100%;padding:10px;box-sizing:border-box;\">\n  <div style=\"display:flex;align-items:center;margin-bottom:8px;\">\n    <div style=\"width:20px;height:20px;border-radius:50%;background-color:{{msg.payload.color||'#0094CE'}};box-shadow:0 0 8px {{msg.payload.color||'#0094CE'}};margin-right:10px;flex-shrink:0;\"></div>\n    <span style=\"font-weight:bold;font-size:16px;text-transform:uppercase;\">{{msg.payload.nivel}}</span>\n  </div>\n  <div style=\"font-size:13px;margin-bottom:4px;line-height:1.4;\">{{msg.payload.razonamiento || '—'}}</div>\n  <div style=\"font-size:11px;color:#888;margin-top:auto;\">{{msg.payload.timestamp | date:'dd/MM/yyyy HH:mm:ss'}}</div>\n</div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "className": "",
+        "x": 660,
+        "y": 1300,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "debug_llm_decision",
+        "type": "debug",
+        "z": "f6f2187d.f17ca8",
+        "name": "Debug Decision LLM",
+        "active": true,
+        "tosidebar": true,
+        "console": true,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 660,
+        "y": 1380,
+        "wires": []
+    },
+    {
+        "id": "http_in_llm_decision",
+        "type": "http in",
+        "z": "f6f2187d.f17ca8",
+        "name": "GET /api/llm-decision",
+        "url": "/api/llm-decision",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 1420,
+        "wires": [
+            [
+                "func_llm_decision_reader"
+            ]
+        ]
+    },
+    {
+        "id": "func_llm_decision_reader",
+        "type": "function",
+        "z": "f6f2187d.f17ca8",
+        "name": "Read LLM Decision",
+        "func": "var decision = flow.get(\"llm_decision\");\nif (decision) {\n    msg.statusCode = 200;\n    msg.payload = decision;\n} else {\n    msg.statusCode = 503;\n    msg.payload = { error: \"no_llm_decision_yet\" };\n}\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 520,
+        "y": 1420,
+        "wires": [
+            [
+                "http_res_llm_decision"
+            ]
+        ]
+    },
+    {
+        "id": "http_res_llm_decision",
+        "type": "http response",
+        "z": "f6f2187d.f17ca8",
+        "name": "Response /api/llm-decision",
+        "statusCode": "",
+        "headers": {
+            "Cache-Control": "no-store"
+        },
+        "x": 900,
+        "y": 1420,
         "wires": []
     }
 ]

@@ -6,6 +6,24 @@ let isLoading = false;
 
 const QUERY_TIMEOUT_MS = 30000;
 
+// ---------------------------------------------------------------------------
+// Response text extraction — lightweight, LangGraph-replaceable
+// ---------------------------------------------------------------------------
+// Priority-ordered keys that likely hold the human-readable answer.
+// When LangGraph takes over response formatting, replace this function.
+const TEXT_KEYS = ['message', 'response_message', 'response', 'text', 'answer', 'content'];
+
+function extractText(responseObj) {
+    if (!responseObj || typeof responseObj !== 'object') return null;
+
+    for (const key of TEXT_KEYS) {
+        if (typeof responseObj[key] === 'string' && responseObj[key].trim()) {
+            return responseObj[key];
+        }
+    }
+    return null;
+}
+
 function getElements() {
     return {
         msgList: document.getElementById('chat-messages'),
@@ -78,6 +96,8 @@ function setInputDisabled(disabled) {
 }
 
 export async function sendMessage() {
+    if (isLoading) return;
+
     const { input } = getElements();
     const text = input.value.trim();
 
@@ -119,7 +139,18 @@ export async function sendMessage() {
         }
 
         const data = await res.json();
-        const responseText = data.response || JSON.stringify(data);
+
+        // Extract human-readable text from the structured response.
+        // Priority: parsed field → raw ollama text → stringify fallback.
+        let responseText;
+        if (data.response != null && typeof data.response === 'object') {
+            responseText = extractText(data.response) || JSON.stringify(data.response);
+        } else if (typeof data.response === 'string') {
+            responseText = data.response;
+        } else {
+            responseText = data.raw || JSON.stringify(data);
+        }
+
         messages.push({ sender: 'agent', text: responseText, timestamp: new Date().toISOString() });
         renderMessage(responseText, 'agent');
     } catch (err) {

@@ -1213,5 +1213,133 @@
     "x": 720,
     "y": 1080,
     "wires": []
+  },
+  {
+    "id": "mqtt_in_llm_decision",
+    "type": "mqtt in",
+    "z": "f6f2187d.f17ca8",
+    "name": "Suscribir a Decisiones LLM",
+    "topic": "smarthome/equipo69/llm/decision",
+    "qos": "0",
+    "datatype": "json",
+    "broker": "mqtt_broker_config",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 140,
+    "y": 1300,
+    "wires": [
+      [
+        "func_llm_decision_store"
+      ]
+    ]
+  },
+  {
+    "id": "func_llm_decision_store",
+    "type": "function",
+    "z": "f6f2187d.f17ca8",
+    "name": "Store LLM Decision",
+    "func": "var decision = msg.payload;\nif (decision && decision.nivel) {\n    flow.set(\"llm_decision\", decision);\n    var colors = {\n        critico: \"#ff3333\", alto: \"#ff9933\",\n        medio: \"#ffcc00\", bajo: \"#33cc33\", info: \"#0094CE\"\n    };\n    var color = colors[decision.nivel] || \"#0094CE\";\n    return [\n        { payload: {\n            nivel: decision.nivel,\n            razonamiento: decision.razonamiento || \"\",\n            accion: decision.accion || \"\",\n            timestamp: decision.timestamp || new Date().toISOString(),\n            color: color\n        }},\n        msg\n    ];\n}\nreturn [null, null];",
+    "outputs": 2,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 360,
+    "y": 1300,
+    "wires": [
+      [
+        "ui_llm_decision"
+      ],
+      [
+        "debug_llm_decision"
+      ]
+    ]
+  },
+  {
+    "id": "ui_llm_decision",
+    "type": "ui_template",
+    "z": "f6f2187d.f17ca8",
+    "group": "ui_group_security",
+    "name": "LLM Decision Widget",
+    "order": 5,
+    "width": 6,
+    "height": 3,
+    "format": "<div ng-if=\"!msg.payload || !msg.payload.nivel\" style=\"display:flex;align-items:center;justify-content:center;height:100%;color:#999;font-style:italic;\">\n  Sin decisiones LLM\n</div>\n<div ng-if=\"msg.payload && msg.payload.nivel\" style=\"display:flex;flex-direction:column;height:100%;padding:10px;box-sizing:border-box;\">\n  <div style=\"display:flex;align-items:center;margin-bottom:8px;\">\n    <div style=\"width:20px;height:20px;border-radius:50%;background-color:{{msg.payload.color||'#0094CE'}};box-shadow:0 0 8px {{msg.payload.color||'#0094CE'}};margin-right:10px;flex-shrink:0;\"></div>\n    <span style=\"font-weight:bold;font-size:16px;text-transform:uppercase;\">{{msg.payload.nivel}}</span>\n  </div>\n  <div style=\"font-size:13px;margin-bottom:4px;line-height:1.4;\">{{msg.payload.razonamiento || '—'}}</div>\n  <div style=\"font-size:11px;color:#888;margin-top:auto;\">{{msg.payload.timestamp | date:'dd/MM/yyyy HH:mm:ss'}}</div>\n</div>",
+    "storeOutMessages": true,
+    "fwdInMessages": true,
+    "className": "",
+    "x": 660,
+    "y": 1300,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "debug_llm_decision",
+    "type": "debug",
+    "z": "f6f2187d.f17ca8",
+    "name": "Debug Decision LLM",
+    "active": true,
+    "tosidebar": true,
+    "console": true,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 660,
+    "y": 1380,
+    "wires": []
+  },
+  {
+    "id": "http_in_llm_decision",
+    "type": "http in",
+    "z": "f6f2187d.f17ca8",
+    "name": "GET /api/llm-decision",
+    "url": "/api/llm-decision",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 120,
+    "y": 1420,
+    "wires": [
+      [
+        "func_llm_decision_reader"
+      ]
+    ]
+  },
+  {
+    "id": "func_llm_decision_reader",
+    "type": "function",
+    "z": "f6f2187d.f17ca8",
+    "name": "Read LLM Decision",
+    "func": "var decision = flow.get(\"llm_decision\");\nif (decision) {\n    msg.statusCode = 200;\n    msg.payload = decision;\n} else {\n    msg.statusCode = 503;\n    msg.payload = { error: \"no_llm_decision_yet\" };\n}\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 520,
+    "y": 1420,
+    "wires": [
+      [
+        "http_res_llm_decision"
+      ]
+    ]
+  },
+  {
+    "id": "http_res_llm_decision",
+    "type": "http response",
+    "z": "f6f2187d.f17ca8",
+    "name": "Response /api/llm-decision",
+    "statusCode": "",
+    "headers": {
+      "Cache-Control": "no-store"
+    },
+    "x": 900,
+    "y": 1420,
+    "wires": []
   }
 ]

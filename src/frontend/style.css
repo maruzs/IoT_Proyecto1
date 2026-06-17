@@ -133,9 +133,6 @@ button:active { transform: translateY(0); }
 #btn-open-door { background-color: #4ade80; }
 #btn-open-door:hover { background-color: #22c55e; }
 
-#btn-refresh { background-color: #38bdf8; }
-#btn-refresh:hover { background-color: #0ea5e9; }
-
 #enrollment-submit { background-color: #fbbf24; }
 #enrollment-submit:hover { background-color: #f59e0b; }
 
