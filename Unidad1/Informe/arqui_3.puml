@@ -1,0 +1,82 @@
+@startuml arqui_3
+
+autonumber
+
+title Secuencia: Telemetría, Automatización y Alertas (equipo69)
+
+box "Hardware IoT" #LightBlue
+    participant "Arduino MKR1000" as MKR
+    participant "ESP32-CAM" as ESP
+end box
+
+box "Broker MQTT" #LightGreen
+    participant "Mosquitto Broker" as Broker
+end box
+
+box "Node-RED & Almacenamiento" #LightYellow
+    participant "Node-RED Flows" as NR
+    database "historial.csv" as CSV
+end box
+
+box "Mensajería Externa" #LightPink
+    participant "Telegram API" as TG
+    actor "Usuario Telegram" as Client
+end box
+
+== 1. Envío de Telemetría (Cada 2 segundos) ==
+loop Cada 2000 ms
+    MKR -> MKR : Lee SHT30, MQ-2, MAX4466
+    MKR -> Broker : Publica smarthome/equipo69/datos\n{"temperatura":T, "humedad":H, "gas":G, "gas_digital":"...", "sensor_extra":S}
+    Broker -> NR : Entrega mensaje JSON
+    NR -> CSV : Guarda en /data/historial.csv\n[timestamp, T, H, G, S, alerta]
+    NR -> NR : Actualiza Gauges, Gráficos y variables globales
+end
+
+== 2. Evaluación de Reglas e Inicio de Alertas ==
+alt Regla 1: Temperatura > 30 °C
+    NR -> Broker : Publica smarthome/equipo69/control/led "ON"
+    NR -> Broker : Publica smarthome/equipo69/control/buzzer "ON"
+    NR -> TG : Envía Alerta de Temperatura por Telegram
+    TG -> Client : Mensaje: "🚨 [SmartHome ALERTA] Temperatura crítica..."
+    Broker -> MKR : Enciende LED Alerta y activa Buzzer
+else Regla 2: Gas > 1020 ppm
+    NR -> Broker : Publica smarthome/equipo69/control/led "ON"
+    NR -> Broker : Publica smarthome/equipo69/control/buzzer "ON"
+    NR -> Broker : Publica smarthome/equipo69/camara/captura\n{"accion":"iniciar_burst","duracion":5}
+    Broker -> ESP : Recibe trigger e inicia ráfaga de fotos
+    NR -> TG : Envía Alerta de Gas por Telegram
+    TG -> Client : Mensaje: "🚨 [SmartHome ALERTA] Alerta de Gas detectada..."
+    Broker -> MKR : Enciende LED Alerta y activa Buzzer
+else Regla 3: Sonido (sensor_extra) > 150 (Ruido de Alerta)
+    NR -> Broker : Publica smarthome/equipo69/camara/captura\n{"accion":"iniciar_burst","duracion":5}
+    Broker -> ESP : Recibe trigger e inicia ráfaga de fotos
+end
+
+== 3. Temporizador de Apagado Automático (Latch de 15 Minutos) ==
+loop Para cada lectura normal consecutiva en Node-RED
+    NR -> NR : ¿Estado de Alerta = ON y lecturas normales?
+    alt Transcurridos >= 15 Minutos (900,000 ms) sin nuevas lecturas críticas
+        NR -> NR : led_state = "OFF"
+        NR -> Broker : Publica smarthome/equipo69/control/led "OFF"
+        NR -> Broker : Publica smarthome/equipo69/control/buzzer "OFF"
+        Broker -> MKR : Apaga LED Alerta y desactiva Buzzer
+    end
+end
+
+== 4. Interacción con el Bot de Telegram ==
+Client -> TG : Envía comando /status
+TG -> NR : Evento de mensaje recibido
+NR -> NR : Lee últimas variables de memoria global
+NR -> TG : Responde con lecturas en tiempo real
+TG -> Client : Mensaje: "📊 SmartHome Status: Temp=23.5°C, Gas=412ppm..."
+
+Client -> TG : Envía comando /entendido (o /noted)
+TG -> NR : Evento de mensaje recibido
+NR -> NR : Resetea led_state = "OFF"
+NR -> Broker : Publica smarthome/equipo69/control/led "OFF"
+NR -> Broker : Publica smarthome/equipo69/control/buzzer "OFF"
+Broker -> MKR : Apaga LED Alerta y desactiva Buzzer (Confirmación inmediata)
+NR -> TG : Confirma silencio de alertas
+TG -> Client : Mensaje: "✅ Alerta confirmada. Actuadores apagados."
+
+@enduml

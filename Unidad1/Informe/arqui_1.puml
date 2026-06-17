@@ -1,0 +1,83 @@
+@startuml arqui_1
+skinparam componentStyle uml2
+skinparam databaseBackgroundColor LightYellow
+skinparam actorBackgroundColor LightBlue
+skinparam nodeBackgroundColor LightCyan
+skinparam queueBackgroundColor LightGreen
+title Arquitectura General del Sistema SmartHome IoT (equipo69)
+actor "Usuario (Navegador)" as User
+actor "Usuario (Telegram)" as TelegramUser
+node "Cliente / Navegador Web" {
+    component "Interfaz Web (Frontend)" as FrontendApp
+}
+node "Servidores / Infraestructura (Docker Compose)" {
+    
+    node "Contenedor: frontend (Nginx :80)" {
+        component "Servidor Web Nginx" as NginxServer
+    }
+    
+    node "Contenedor: backend (FastAPI :8000)" {
+        component "FastAPI App" as BackendApp
+        component "FaceProcessor (face_recognition)" as FaceEngine
+        database "SQLite (access_control.db)" as DB
+    }
+    
+    node "Contenedor: mosquitto (Broker :1883)" {
+        queue "Broker MQTT" as MQTTBroker
+    }
+    
+    node "Contenedor: nodered (Node-RED :1880)" {
+        component "Node-RED Flows" as NodeRed
+        database "historial.csv" as CSVFile
+    }
+}
+node "Dispositivos de Hardware (SmartHome)" {
+    
+    node "Arduino MKR1000" as MKR {
+        component "Firmware MKR1000" as MKRFirmware
+        
+        folder "Sensores MKR" {
+            [SHT30 (Temp/Hum)] as SHT30
+            [MQ-2 (Gas analógico & digital)] as MQ2
+            [MAX4466 (Sonido/Mic)] as MAX4466
+        }
+        
+        folder "Actuadores MKR" {
+            [LED Alerta (Pin 6)] as LEDAlert
+            [LED Puerta (Pin 8)] as LEDDoor
+            [Buzzer (Pin 5)] as Buzzer
+        }
+    }
+    
+    node "ESP32-CAM" as ESP32CAM {
+        component "Firmware ESP32-CAM" as CamFirmware
+        [Cámara OV2640] as Camera
+    }
+}
+cloud "Telegram API (Internet)" as TelegramAPI
+' Connections
+User --> FrontendApp : Interactúa (HTTP/JS)
+FrontendApp --> NginxServer : Peticiones HTTP
+NginxServer --> BackendApp : Proxies /api
+BackendApp --> FaceEngine : Procesa imágenes
+BackendApp --> DB : Lee/Escribe historial y usuarios
+BackendApp --> MQTTBroker : Publica control/led-puerta y camara/captura
+MQTTBroker <-- BackendApp : Suscribe a camara/imagen y camara/url
+NodeRed --> MQTTBroker : Suscribe a datos, camara/evento, camara/imagen
+NodeRed --> MQTTBroker : Publica control/led, control/buzzer
+NodeRed --> CSVFile : Registra históricos
+NodeRed <--> TelegramAPI : Envía alertas / Recibe comandos
+TelegramUser <--> TelegramAPI : Interactúa con Bot
+TelegramUser --> User : Observa Dashboard / Recibe Alertas
+CamFirmware --> Camera : Captura frames
+CamFirmware --> MQTTBroker : Publica camara/imagen y camara/evento
+MQTTBroker <-- CamFirmware : Suscribe a camara/captura
+MKRFirmware --> SHT30 : Lee (I2C)
+MKRFirmware --> MQ2 : Lee (Analógico A0 & Digital A2)
+MKRFirmware --> MAX4466 : Lee (Analógico A1)
+MKRFirmware --> LEDAlert : Controla (Digital)
+MKRFirmware --> LEDDoor : Controla (Digital, auto-off 3s)
+MKRFirmware --> Buzzer : Controla (Digital)
+MKRFirmware --> MQTTBroker : Publica datos y alerta
+MQTTBroker <-- MKRFirmware : Suscribe a control/led, control/buzzer, control/led-puerta
+@enduml

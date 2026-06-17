@@ -1,0 +1,109 @@
+@startuml arqui_2
+
+autonumber
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+title Secuencia: Reconocimiento Facial y Control de Acceso (equipo69)
+
+box "Frontend & Usuario" #LightBlue
+    actor "Usuario" as User
+    participant "Navegador Web\n(HTML/JS)" as Frontend
+end box
+
+box "Backend & Base de Datos" #LightYellow
+    participant "FastAPI App\n(api/routes.py)" as API
+    participant "FaceProcessor\n(processor.py)" as FaceProc
+    database "SQLite\n(access_control.db)" as DB
+end box
+
+box "Broker & IoT Nodes" #LightGreen
+    participant "Mosquitto Broker\n(MQTT)" as Broker
+    participant "ESP32-CAM\n(Firmware)" as CamNode
+    participant "Arduino MKR1000\n(Firmware)" as MKRNode
+end box
+
+== 1. Disparo de Captura e Inicio de Ráfaga ==
+User -> Frontend : Presiona "Ver Imagen" / Captura
+Frontend -> API : POST /api/capturar (HTTP)
+activate API
+
+API -> Broker : Publica smarthome/equipo69/camara/captura\n{"accion": "iniciar_burst", "duracion": 5}
+Broker -> CamNode : Mensaje MQTT recibido
+activate CamNode
+CamNode -> CamNode : Cambia estado a STATE_BURSTING
+
+loop Cada 250ms durante 5 segundos
+    CamNode -> CamNode : Captura Frame JPEG (VGA)
+    CamNode -> Broker : Publica smarthome/equipo69/camara/imagen [JPEG Bytes]
+    Broker -> API : Entrega JPEG Bytes a MQTTClient
+    API -> API : Almacena frame en buffer de video
+end
+deactivate CamNode
+
+== 2. Procesamiento de Ráfaga y Reconocimiento ==
+loop Procesamiento por sub-ráfagas (cada 3s) en Backend
+    API -> FaceProc : process_burst(frames_buffer)
+    activate FaceProc
+    FaceProc -> FaceProc : Convierte frames a RGB e identifica rostros
+    FaceProc -> DB : get_all_users() (Obtiene encodings conocidos)
+    DB --> FaceProc : Lista de encodings autorizados
+    FaceProc -> FaceProc : Compara encodings (Tolerancia=0.35, Confianza>=0.50)
+    
+    alt CASO A: Coincidencia Exitosa (Mín. 3 frames seguidos)
+        FaceProc --> API : {"estado": "permitido", "usuario": "Juan", "usuario_id": 1}
+        deactivate FaceProc
+        API -> DB : insert_event("Entrada Automática", usuario_id=1)
+        API -> Broker : Publica smarthome/equipo69/control/led-puerta\n{"accion": "ON"}
+        Broker -> MKRNode : Mensaje MQTT recibido
+        activate MKRNode
+        MKRNode -> MKRNode : Enciende PIN_LED_PUERTA (Puerta abierta)
+        MKRNode -> MKRNode : Inicia timer de 3 segundos
+        API -> Broker : Publica smarthome/equipo69/acceso/estado\n{"estado": "permitido", "usuario": "Juan"}
+        API --> Frontend : Responde 200 OK {"estado": "permitido", "usuario": "Juan"}
+        Frontend --> User : Muestra "Acceso Permitido — Juan" y actualiza historial
+        
+        ... Después de 3 segundos ...
+        MKRNode -> MKRNode : checkDoorLedTimeout() -> Apaga PIN_LED_PUERTA
+        deactivate MKRNode
+        
+    alt CASO B: Rostro Desconocido Detectado
+        FaceProc -> FaceProc : Selecciona frame con rostro más grande
+        FaceProc -> FaceProc : Almacena frame en memoria caché
+        FaceProc -> FaceProc : Define fecha límite de enrolamiento (now + 60s)
+        FaceProc --> API : {"estado": "denegado", "usuario": null, "frame": cached_frame}
+        API -> DB : insert_event("Desconocido Detectado")
+        API -> Broker : Publica smarthome/equipo69/acceso/estado\n{"estado": "denegado", "usuario": "desconocido"}
+        API -> Broker : Publica smarthome/equipo69/acceso/enrolar\n{"accion": "enrolar", "timestamp": "ISO_TIME"}
+        API --> Frontend : Responde 200 OK {"estado": "denegado", "usuario": null}
+        Frontend --> User : Muestra "Acceso Denegado — Rostro Desconocido"
+    end
+end
+deactivate API
+
+== 3. Enrolamiento de Rostro Desconocido (Ventana de 60s) ==
+loop Polling cada 2 segundos
+    Frontend -> API : GET /api/ultimo-evento
+    API -> FaceProc : get_enrollment_deadline()
+    FaceProc --> API : Retorna deadline si está activo
+    API --> Frontend : Responde {"evento": "Desconocido Detectado", "enrollable": true, "enrollment_deadline": "..."}
+end
+
+Frontend -> Frontend : Muestra formulario de enrolamiento y countdown de 60s
+User -> Frontend : Ingresa nombre ("Pedro") y presiona "Enrolar"
+Frontend -> API : POST /api/enrolar {"nombre": "Pedro"} (HTTP)
+activate API
+API -> FaceProc : enroll("Pedro")
+activate FaceProc
+FaceProc -> FaceProc : Recupera frame desconocido en caché y extrae encoding
+FaceProc -> DB : insert_user("Pedro", encoding_blob)
+DB --> FaceProc : user_id
+FaceProc -> FaceProc : Limpia caché de frame y deadline
+FaceProc --> API : user_id
+deactivate FaceProc
+API --> Frontend : Responde 200 OK {"id": user_id, "nombre": "Pedro"}
+deactivate API
+Frontend -> Frontend : Oculta formulario de enrolamiento
+Frontend --> User : Alerta "Pedro enrolado correctamente"
+
+@enduml
