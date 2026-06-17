@@ -139,12 +139,18 @@ async def _llm_deduce(message: str, ollama_client) -> dict:
     )
     try:
         raw = await asyncio.wait_for(
-            ollama_client.generate(prompt),
+            ollama_client.generate(prompt, format_json=True),
             timeout=5.0,
         )
         # Try to parse as JSON
         import json as _json
-        data = _json.loads(raw.strip())
+        # Strip markdown fences that phi3:mini sometimes wraps JSON in
+        cleaned = raw.strip()
+        if cleaned.startswith("```"):
+            cleaned = cleaned.split("\n", 1)[-1] if "\n" in cleaned else cleaned
+            cleaned = cleaned.rsplit("```", 1)[0] if cleaned.endswith("```") else cleaned
+            cleaned = cleaned.strip()
+        data = _json.loads(cleaned)
         intent = data.get("intent", "ambiguous")
         if intent not in ("direct_action", "query", "command", "ambiguous"):
             intent = "ambiguous"
