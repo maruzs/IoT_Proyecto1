@@ -36,7 +36,7 @@ services:
       - "1880:1880"
     volumes:
       - ./nodered/data:/data
-      - mosquitto_certs:/certs:ro
+      - ./mosquitto/certs:/certs:ro
     depends_on:
       mosquitto:
         condition: service_healthy
@@ -57,7 +57,7 @@ services:
       - "8000:8000"
     volumes:
       - ./data:/app/data
-      - mosquitto_certs:/certs:ro
+      - ./mosquitto/certs:/certs:ro
     devices:
       - /dev/video0:/dev/video0
       - /dev/video1:/dev/video1
