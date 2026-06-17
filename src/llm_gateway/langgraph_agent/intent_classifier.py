@@ -43,6 +43,8 @@ _QUERY_KEYWORDS = {
     "nivel", "valor", "valores", "lectura", "datos",
     "registro", "hoy", "pasó", "paso", "último", "ultimo",
     "mostrame", "mostrar", "ver", "decime", "decir",
+    "calor", "frío", "frio", "fresco", "cálido", "calido",
+    "seguro", "peligro", "riesgo", "normal", "bien", "mal",
 }
 
 # Strip punctuation for normalization
