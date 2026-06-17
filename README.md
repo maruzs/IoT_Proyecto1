@@ -124,15 +124,7 @@ Esto levanta 7 contenedores:
 | `backend` | 8000 | API REST + face recognition |
 | `frontend` | 80 | Interfaz web |
 
-### 4. Sincronizar CA cert con el firmware ESP32-CAM
-
-```bash
-./scripts/sync-ca-to-firmware.sh
-```
-
-> **¿Por qué?** El certificado CA autofirmado se genera durante `docker compose up`. La ESP32-CAM necesita ese CA cert embebido en su firmware para validar la conexión TLS. Este script lo extrae del volumen Docker y actualiza `src/esp32cam_firmware/src/secrets.h`.
-
-### 5. Verificar
+### 4. Verificar
 
 ```bash
 docker compose ps          # todos deben decir "running"
@@ -307,10 +299,32 @@ arduino-cli compile --fqbn esp32:esp32:esp32cam src/esp32cam_firmware
 arduino-cli upload -p /dev/ttyUSB0 --fqbn esp32:esp32:esp32cam src/esp32cam_firmware
 ```
 
-> **Importante:** La ESP32-CAM usa TLS 1.2 con `WiFiClientSecure` + `setCACert()`. Necesita NTP para sincronizar el reloj y validar la fecha del certificado. La salida serial puede no verse (pines UART compartidos con la cámara) — verificá la conexión en los logs del broker:
-> ```bash
-> docker exec deploy-mosquitto-1 cat /mosquitto/log/mosquitto.log | grep "equipo69-cam"
-> ```
+> **Importante:** La ESP32-CAM usa TLS 1.2 con `WiFiClientSecure` + `setCACert()`. Necesita NTP para sincronizar el reloj y validar la fecha del certificado.
+
+### ⚠️ Verificar sincronización del CA cert
+
+Cada vez que se regeneran los certificados TLS (`generate-certs.sh`), la ESP32-CAM necesita el nuevo CA cert embebido en su firmware. Verificá si están sincronizados:
+
+```bash
+./deploy/scripts/check-ca-sync.sh
+```
+
+Si el script devuelve `❌ CA DESINCRONIZADO`:
+
+```bash
+# 1. Sincronizar el nuevo CA cert al firmware
+./deploy/scripts/sync-ca-to-firmware.sh
+
+# 2. Reflashear la ESP32-CAM
+arduino-cli upload -p /dev/ttyUSB0 --fqbn esp32:esp32:esp32cam src/esp32cam_firmware/
+```
+
+> **¿Cuándo ejecutarlo?** Después de `docker compose up -d` (primera vez), después de `generate-certs.sh`, o si la ESP32-CAM no logra conectarse al broker.
+
+La salida serial puede no verse (pines UART compartidos con la cámara) — verificá la conexión en los logs del broker:
+```bash
+docker exec deploy-mosquitto-1 cat /mosquitto/log/mosquitto.log | grep "equipo69-cam"
+```
 
 ### Archivos de secretos
 
