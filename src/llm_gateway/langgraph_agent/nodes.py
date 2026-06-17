@@ -425,7 +425,7 @@ async def receiving_input_node(state: SmartHomeState) -> dict:
     ollama = OllamaClient(
         base_url=_settings.OLLAMA_URL,
         model=_settings.OLLAMA_MODEL,
-        timeout=50,  # generous for phi3:mini cold start
+        timeout=90,  # generous for phi3:mini cold start
         max_retries=1,
     )
     try:
@@ -600,7 +600,7 @@ async def query_handler_node(state: SmartHomeState) -> dict:
         )
         raw = await asyncio.wait_for(
             ollama.generate(user_prompt, system_prompt=system_prompt, format_json=False),
-            timeout=90.0,
+            timeout=120.0,
         )
         await ollama.close()
         response_text = raw.strip()
