@@ -27,8 +27,9 @@ _ACTION_KEYWORDS = {
     "silencia", "silenciar",
     # Puerta
     "abre", "abrir", "cierra", "cerrar",
-    # Cámara
+    # Cámara — mirar, ver, fijarse
     "captura", "capturar", "graba", "grabar", "foto", "fotografía", "fotografiar",
+    "mira", "mirá", "mirar", "ve", "ver", "fijate", "fíjate", "fijarse",
     # Notificación
     "notifica", "notificar", "avisa", "avisar", "informa", "informar",
 }
@@ -42,7 +43,7 @@ _QUERY_KEYWORDS = {
     "historial", "histórico", "historia", "ayer", "antes", "tendencia",
     "nivel", "valor", "valores", "lectura", "datos",
     "registro", "hoy", "pasó", "paso", "último", "ultimo",
-    "mostrame", "mostrar", "ver", "decime", "decir",
+    "mostrame", "mostrar", "decime", "decir",
     "calor", "frío", "frio", "fresco", "cálido", "calido",
     "seguro", "peligro", "riesgo", "normal", "bien", "mal",
 }

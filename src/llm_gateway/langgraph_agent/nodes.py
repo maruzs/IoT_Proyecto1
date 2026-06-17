@@ -642,7 +642,9 @@ async def direct_exec_node(state: SmartHomeState) -> dict:
     elif _has_any(raw, {"cierra", "cerrar", "apaga", "apagar", "desactiva", "desactivar"}) and ("puerta" in raw or "led puerta" in raw):
         action = {"tool": "activate_led_puerta", "args": {"accion": "OFF"}}
     # Cámara
-    elif _has_any(raw, {"cámara", "camara", "foto", "captura", "capturar", "graba", "grabar", "fotografía", "fotografiar"}):
+    elif _has_any(raw, {"cámara", "camara", "foto", "captura", "capturar", "graba", "grabar",
+                         "fotografía", "fotografiar", "mira", "mirá", "mirar",
+                         "ve", "ver", "fijate", "fíjate", "fijarse"}):
         action = {"tool": "trigger_camera", "args": {"duracion": 5}}
     # Notificación
     elif _has_any(raw, {"notifica", "notificar", "avisa", "avisar", "informa", "informar"}):
