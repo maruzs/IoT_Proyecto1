@@ -29,7 +29,8 @@ class MCPClient:
         async with streamablehttp_client(
             self.url,
             httpx_client_factory=lambda **kw: httpx.AsyncClient(verify=self._ca_cert, **kw),
-        ) as (read, write):
+        ) as streams:
+            read, write = streams[0], streams[1]
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 result = await session.call_tool(name, arguments or {})
@@ -41,7 +42,8 @@ class MCPClient:
         async with streamablehttp_client(
             self.url,
             httpx_client_factory=lambda **kw: httpx.AsyncClient(verify=self._ca_cert, **kw),
-        ) as (read, write):
+        ) as streams:
+            read, write = streams[0], streams[1]
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 result = await session.list_tools()
