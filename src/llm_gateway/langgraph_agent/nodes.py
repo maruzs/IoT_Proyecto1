@@ -590,10 +590,26 @@ async def direct_exec_node(state: SmartHomeState) -> dict:
     # Silenciar alarmas
     elif _has_any(raw, {"silencia", "silenciar", "silencio"}):
         action = {"tool": "silence_alerts", "args": {}}
-    else:
+    if action is None:
         return {}
 
-    return {"pending_actions": [action]}
+    tool_names = {
+        "activate_led_alerta": "LED alerta",
+        "activate_led_puerta": "LED puerta",
+        "trigger_camera": "cámara",
+        "send_notification": "notificación",
+        "silence_alerts": "silencio",
+    }
+    friendly = tool_names.get(action["tool"], action["tool"])
+
+    return {
+        "pending_actions": [action],
+        "notification_payload": {
+            "nivel": "info",
+            "razonamiento": f"Ejecutando acción: {friendly}.",
+        },
+        "notification_ready": True,
+    }
 
 
 def _has_any(text: str, keywords: set) -> bool:
