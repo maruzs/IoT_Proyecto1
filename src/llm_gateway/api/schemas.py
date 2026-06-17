@@ -59,6 +59,7 @@ class AgentResponse(BaseModel):
     decision: Optional[AgentDecision] = None
     state: Optional[AgentStateSummary] = None
     notification: Optional[dict] = None  # raw notification payload for frontend display
+    needs_confirmation: bool = False  # true when agent is waiting for yes/no
 
 
 class AgentErrorResponse(BaseModel):

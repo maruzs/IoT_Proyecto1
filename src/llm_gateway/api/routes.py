@@ -267,4 +267,5 @@ async def llm_agent(request: Request, body: AgentRequest):
         decision=decision_data,
         state=state_data,
         notification=notification,
+        needs_confirmation=result.get("needs_confirmation", False),
     )

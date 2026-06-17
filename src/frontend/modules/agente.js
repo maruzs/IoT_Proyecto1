@@ -3,26 +3,54 @@ import { apiPost, formatTimestamp } from './api.js';
 // Chat state
 const messages = [];
 let isLoading = false;
+let isWaitingConfirmation = false;
 
 const QUERY_TIMEOUT_MS = 30000;
 
 // ---------------------------------------------------------------------------
-// Response text extraction — lightweight, LangGraph-replaceable
+// Response formatting — structured AgentResponse from LangGraph
 // ---------------------------------------------------------------------------
-// Priority-ordered keys that likely hold the human-readable answer.
-// When LangGraph takes over response formatting, replace this function.
-const TEXT_KEYS = ['message', 'response_message', 'response', 'text', 'answer', 'content'];
 
-function extractText(responseObj) {
-    if (!responseObj || typeof responseObj !== 'object') return null;
+function formatAgentResponse(data) {
+    // data = { status, decision?, state?, notification?, needs_confirmation? }
 
-    for (const key of TEXT_KEYS) {
-        if (typeof responseObj[key] === 'string' && responseObj[key].trim()) {
-            return responseObj[key];
-        }
+    // Pending clarification
+    if (data.needs_confirmation) {
+        isWaitingConfirmation = true;
+        return data.notification?.razonamiento
+            || "¿Confirmás esta acción? Responde sí o no.";
     }
-    return null;
+
+    isWaitingConfirmation = false;
+
+    // Normal decision — show reasoning
+    if (data.decision) {
+        const d = data.decision;
+        const nivel = d.nivel ? `[${d.nivel.toUpperCase()}] ` : '';
+        const razon = d.razonamiento || '';
+        const acciones = d.acciones?.length
+            ? `\n\nAcciones: ${d.acciones.map(a => a.tool).join(', ')}`
+            : '';
+        return `${nivel}${razon}${acciones}`;
+    }
+
+    // Fallback: raw notification text
+    if (data.notification?.razonamiento) {
+        return data.notification.razonamiento;
+    }
+
+    // State-only response (e.g. silenced mode change)
+    if (data.state) {
+        return `Modo: ${data.state.mode}. `
+            + (data.state.mcp_connected ? 'Sensores conectados.' : 'Sensores desconectados.');
+    }
+
+    return 'Sin respuesta del agente.';
 }
+
+// ---------------------------------------------------------------------------
+// DOM helpers
+// ---------------------------------------------------------------------------
 
 function getElements() {
     return {
@@ -95,6 +123,10 @@ function setInputDisabled(disabled) {
     if (sendBtn) sendBtn.disabled = disabled;
 }
 
+// ---------------------------------------------------------------------------
+// Send message to LangGraph agent
+// ---------------------------------------------------------------------------
+
 export async function sendMessage() {
     if (isLoading) return;
 
@@ -118,10 +150,10 @@ export async function sendMessage() {
     const timeoutId = setTimeout(() => controller.abort(), QUERY_TIMEOUT_MS);
 
     try {
-        const res = await fetch('/llm/query', {
+        const res = await fetch('/llm/agent', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt: text }),
+            body: JSON.stringify({ message: text }),
             signal: controller.signal,
         });
         clearTimeout(timeoutId);
@@ -129,9 +161,11 @@ export async function sendMessage() {
 
         if (!res.ok) {
             if (res.status >= 500) {
-                renderError('Server error. Please try again later.');
+                renderError('Error del servidor. Probá de nuevo.');
+            } else if (res.status === 504) {
+                renderError('El agente tardó demasiado. Probá con un mensaje más corto.');
             } else {
-                renderError(`Error ${res.status}. Please try again.`);
+                renderError(`Error ${res.status}. Probá de nuevo.`);
             }
             setInputDisabled(false);
             getElements().input.focus();
@@ -140,27 +174,24 @@ export async function sendMessage() {
 
         const data = await res.json();
 
-        // Extract human-readable text from the structured response.
-        // Priority: parsed field → raw ollama text → stringify fallback.
-        let responseText;
-        if (data.response != null && typeof data.response === 'object') {
-            responseText = extractText(data.response) || JSON.stringify(data.response);
-        } else if (typeof data.response === 'string') {
-            responseText = data.response;
-        } else {
-            responseText = data.raw || JSON.stringify(data);
-        }
+        // Format the structured response for display
+        const responseText = formatAgentResponse(data);
 
         messages.push({ sender: 'agent', text: responseText, timestamp: new Date().toISOString() });
         renderMessage(responseText, 'agent');
+
+        // If waiting confirmation, show subtle hint
+        if (data.needs_confirmation) {
+            renderMessage('(Responde "sí" o "no")', 'agent');
+        }
     } catch (err) {
         clearTimeout(timeoutId);
         clearLoading();
 
         if (err.name === 'AbortError') {
-            renderError('Request timed out. Please try again.');
+            renderError('Timeout. El agente no respondió a tiempo.');
         } else {
-            renderError('Network error. Check your connection.');
+            renderError('Error de red. Revisá tu conexión.');
         }
     } finally {
         isLoading = false;
@@ -168,6 +199,10 @@ export async function sendMessage() {
         getElements().input.focus();
     }
 }
+
+// ---------------------------------------------------------------------------
+// Init
+// ---------------------------------------------------------------------------
 
 export function init() {
     const { input, sendBtn } = getElements();
