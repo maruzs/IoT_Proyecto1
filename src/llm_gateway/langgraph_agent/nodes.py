@@ -420,9 +420,12 @@ async def receiving_input_node(state: SmartHomeState) -> dict:
     from .intent_classifier import classify
 
     result = await classify(user_input)
+    entities = result.get("entities", {})
     return {
         "classified_intent": result.get("intent"),
         "intent_confidence": result.get("confidence", 0.0),
+        "deduced_tool": entities.get("tool"),
+        "deduced_tool_args": entities.get("tool_args"),
     }
 
 
@@ -456,8 +459,36 @@ async def command_router_node(state: SmartHomeState) -> dict:
 
 
 async def query_handler_node(state: SmartHomeState) -> dict:
-    """Fetch sensor data via MCP and use LLM to generate a natural-language response."""
+    """Fetch data via MCP. Uses LLM-deduced tool if present, else default sensor query + LLM NL."""
     mcp_client = MCPClient(url=settings.mcp_server_url)
+    user_question = state.get("user_input_raw", "¿Cómo está la casa?")
+    raw_lower = user_question.lower()
+
+    # ── LLM-deduced specific tool takes priority ──
+    deduced_tool = state.get("deduced_tool")
+    deduced_args = state.get("deduced_tool_args") or {}
+
+    if deduced_tool == "query_history":
+        try:
+            history_data = await mcp_client.call_tool("query_history", deduced_args or {"limit": 10})
+        except Exception:
+            history_data = None
+        text = _format_history(history_data)
+        return {"notification_payload": {"nivel": "info", "razonamiento": text}, "notification_ready": True}
+
+    if deduced_tool == "get_system_status":
+        try:
+            system_data = await mcp_client.call_tool("get_system_status")
+        except Exception:
+            system_data = {}
+        text = "; ".join(f"{k}: {v}" for k, v in system_data.items()) if system_data else "Sistema no disponible."
+        return {"notification_payload": {"nivel": "info", "razonamiento": text}, "notification_ready": True}
+
+    if deduced_tool == "get_sensor_state":
+        # Fall through to default sensor + LLM NL below
+        pass
+
+    # ── Default: sensor + system status → LLM natural language ──
 
     try:
         sensor_data = await mcp_client.call_tool("get_sensor_state")
@@ -567,12 +598,17 @@ async def query_handler_node(state: SmartHomeState) -> dict:
 
 
 async def direct_exec_node(state: SmartHomeState) -> dict:
-    """Parse direct action keywords from the user message and map to MCP tools."""
+    """Execute a direct action: use LLM-deduced tool/args if present, else keyword parsing."""
     raw = state.get("user_input_raw", "").lower()
     action = None
 
-    # LED alerta
-    if _has_any(raw, {"prende", "prender", "enciende", "encender", "activa", "activar"}) and "led" in raw and "alerta" in raw:
+    # 1) LLM-deduced tool takes priority
+    deduced_tool = state.get("deduced_tool")
+    deduced_args = state.get("deduced_tool_args") or {}
+    if deduced_tool:
+        action = {"tool": deduced_tool, "args": deduced_args}
+    # 2) Keyword-based fallback
+    elif _has_any(raw, {"prende", "prender", "enciende", "encender", "activa", "activar"}) and "led" in raw and "alerta" in raw:
         action = {"tool": "activate_led_alerta", "args": {"estado": True}}
     elif _has_any(raw, {"apaga", "apagar", "desactiva", "desactivar"}) and "led" in raw and "alerta" in raw:
         action = {"tool": "activate_led_alerta", "args": {"estado": False}}
@@ -616,6 +652,17 @@ def _has_any(text: str, keywords: set) -> bool:
     """Check if any of the keywords appear as whole words in the text."""
     tokens = set(text.split())
     return bool(tokens & keywords)
+
+
+def _format_history(history_data) -> str:
+    """Format history data for user display."""
+    if history_data and isinstance(history_data, list) and len(history_data) > 0:
+        entries = history_data[:5]
+        return "Últimas lecturas: " + "; ".join(
+            f"{e.get('timestamp','?')[:16]}: T={e.get('temperatura', e.get('temperature','?'))}°C G={e.get('gas','?')}ppm"
+            for e in entries
+        )
+    return "No hay datos históricos disponibles aún."
 
 
 async def waiting_confirmation_node(state: SmartHomeState) -> dict:
