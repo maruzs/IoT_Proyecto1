@@ -41,6 +41,8 @@ _QUERY_KEYWORDS = {
     "estado", "led", "alerta", "cámara", "sensor", "sensores",
     "historial", "histórico", "historia", "ayer", "antes", "tendencia",
     "nivel", "valor", "valores", "lectura", "datos",
+    "registro", "hoy", "pasó", "paso", "último", "ultimo",
+    "mostrame", "mostrar", "ver", "decime", "decir",
 }
 
 # Strip punctuation for normalization

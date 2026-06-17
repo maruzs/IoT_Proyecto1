@@ -528,7 +528,7 @@ async def query_handler_node(state: SmartHomeState) -> dict:
 
     # ── Check if user is asking about history ──
     raw_lower = user_question.lower()
-    history_keywords = {"historial", "histórico", "historia", "ayer", "antes", "tendencia", "evolución"}
+    history_keywords = {"historial", "histórico", "historia", "ayer", "antes", "tendencia", "evolución", "registro", "pasó", "paso", "último", "ultimo"}
     if any(kw in raw_lower for kw in history_keywords):
         try:
             history_data = await mcp_client.call_tool("query_history", {"limit": 10})
