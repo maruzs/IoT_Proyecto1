@@ -49,7 +49,11 @@ def route_after_evaluating(state: SmartHomeState) -> str:
     if state.get("anomaly_detected") or state.get("trend_rising"):
         return "deciding"
 
-    # Everything normal → notify and end this cycle
+    # Normal readings — still consult LLM every 5th cycle for reasoned output,
+    # otherwise notify directly (avoids burning tokens on redundant "all normal" reasoning)
+    if state.get("cycle_count", 0) % 5 == 0:
+        return "deciding"
+
     return "notifying"
 
 

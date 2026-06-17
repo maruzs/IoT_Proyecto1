@@ -456,7 +456,7 @@ async def command_router_node(state: SmartHomeState) -> dict:
 
 
 async def query_handler_node(state: SmartHomeState) -> dict:
-    """Fetch sensor and system status via MCP and build a natural-language response."""
+    """Fetch sensor data via MCP and use LLM to generate a natural-language response."""
     mcp_client = MCPClient(url=settings.mcp_server_url)
 
     try:
@@ -478,18 +478,50 @@ async def query_handler_node(state: SmartHomeState) -> dict:
 
     temp = sensor_data.get("temperature", "N/A")
     hum = sensor_data.get("humidity", "N/A")
-    gas = sensor_data.get("gas_ppm", "N/A")
-    sound = sensor_data.get("sound_db", "N/A")
+    gas = sensor_data.get("gas", sensor_data.get("gas_ppm", "N/A"))
+    sound = sensor_data.get("sound", sensor_data.get("sound_db", "N/A"))
 
-    response = (
-        f"Temperatura: {temp}°C, Humedad: {hum}%, "
-        f"Gas: {gas} ppm, Ruido: {sound} dB."
+    user_question = state.get("user_input_raw", "¿Cómo está la casa?")
+
+    # Build prompt for LLM
+    user_prompt = (
+        f"El usuario preguntó: \"{user_question}\"\n\n"
+        f"Datos actuales de los sensores:\n"
+        f"- Temperatura: {temp}°C\n"
+        f"- Humedad: {hum}%\n"
+        f"- Gas: {gas} ppm\n"
+        f"- Ruido: {sound} dB\n\n"
+        f"Respondé en español en lenguaje natural, en una o dos frases. "
+        f"Si hay algo fuera de lo normal, avisá."
     )
+
+    # Lazy import to avoid circular deps (same pattern as deciding_node)
+    from ..ollama_client import OllamaClient, OllamaError
+    from ..config import Settings
+
+    _settings = Settings()
+    try:
+        ollama = OllamaClient(
+            base_url=_settings.OLLAMA_URL,
+            model=_settings.OLLAMA_MODEL,
+            timeout=_settings.OLLAMA_TIMEOUT,
+            max_retries=1,
+        )
+        raw = await asyncio.wait_for(ollama.generate(user_prompt), timeout=10.0)
+        await ollama.close()
+        response_text = raw.strip()
+    except (asyncio.TimeoutError, OllamaError, Exception) as exc:
+        logger.warning("LLM query failed in query_handler_node: %s", exc)
+        # Fallback: raw sensor data
+        response_text = (
+            f"Temperatura: {temp}°C, Humedad: {hum}%, "
+            f"Gas: {gas} ppm, Ruido: {sound} dB."
+        )
 
     return {
         "notification_payload": {
             "nivel": "info",
-            "razonamiento": response,
+            "razonamiento": response_text,
         },
         "notification_ready": True,
     }
