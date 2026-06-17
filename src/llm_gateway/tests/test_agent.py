@@ -352,7 +352,7 @@ async def test_llm_agent_endpoint_publishes_mqtt(mock_mqtt_instance):
     mock_request.app.state.mqtt = mock_mqtt_instance
 
     with patch("src.llm_gateway.api.routes.agent_with_user") as mock_agent:
-        mock_agent.invoke.return_value = {
+        mock_agent.ainvoke = AsyncMock(return_value={
             "notification_payload": {
                 "nivel": "normal",
                 "razonamiento": "Todo en orden",
@@ -367,7 +367,7 @@ async def test_llm_agent_endpoint_publishes_mqtt(mock_mqtt_instance):
             "cycle_count": 1,
             "mcp_connected": True,
             "sensor_stale": False,
-        }
+        })
 
         body = AgentRequest(message="¿cómo está todo?")
         response = await llm_agent(mock_request, body)
@@ -391,7 +391,7 @@ async def test_llm_agent_endpoint_critical_mqtt(mock_mqtt_instance):
     mock_request.app.state.mqtt = mock_mqtt_instance
 
     with patch("src.llm_gateway.api.routes.agent_with_user") as mock_agent:
-        mock_agent.invoke.return_value = {
+        mock_agent.ainvoke = AsyncMock(return_value={
             "notification_payload": {
                 "nivel": "critico",
                 "razonamiento": "Gas 1100 ppm — umbral crítico",
@@ -408,7 +408,7 @@ async def test_llm_agent_endpoint_critical_mqtt(mock_mqtt_instance):
             "cycle_count": 1,
             "mcp_connected": True,
             "sensor_stale": False,
-        }
+        })
 
         body = AgentRequest(
             message="evaluá ahora",

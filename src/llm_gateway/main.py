@@ -84,7 +84,7 @@ async def startup():
                         "critical_active": False,
                     }
                     config = {"configurable": {"thread_id": "autonomous-cycle"}}
-                    result = await asyncio.to_thread(agent.invoke, initial_state, config)
+                    result = await agent.ainvoke(initial_state, config)
 
                     # Publish notification if ready
                     notification = result.get("notification_payload")
