@@ -412,26 +412,14 @@ async def degraded_mode_node(state: SmartHomeState) -> dict:
 
 
 async def receiving_input_node(state: SmartHomeState) -> dict:
-    """Classify user input using the rule-first intent classifier, with LLM fallback."""
+    """Classify user input using the rule-first intent classifier (NO LLM fallback)."""
     user_input = state.get("user_input_raw")
     if not user_input:
         return {"classified_intent": None}
 
     from .intent_classifier import classify
-    from ..ollama_client import OllamaClient
-    from ..config import Settings
 
-    _settings = Settings()
-    ollama = OllamaClient(
-        base_url=_settings.OLLAMA_URL,
-        model=_settings.OLLAMA_MODEL,
-        timeout=90,  # generous for phi3:mini cold start
-        max_retries=1,
-    )
-    try:
-        result = await classify(user_input, ollama_client=ollama)
-    finally:
-        await ollama.close()
+    result = await classify(user_input)  # rule-first only, no ollama_client
     entities = result.get("entities", {})
     return {
         "classified_intent": result.get("intent"),
@@ -563,7 +551,13 @@ async def query_handler_node(state: SmartHomeState) -> dict:
             "notification_ready": True,
         }
 
-    # ── Normal query → LLM natural language ──
+    # ── Normal query → LLM natural language (solo si es conversacional) ──
+    # For simple sensor queries, skip LLM and return data directly (saves 30-60s)
+    is_simple = any(kw in raw_lower for kw in {"temperatura", "humedad", "gas", "ruido", "estado"})
+    if is_simple and "?" in raw_lower:
+        # Simple status question → skip LLM, return structured data
+        text = f"Temperatura: {temp}°C, Humedad: {hum}%, Gas: {gas} ppm, Ruido: {sound} dB."
+        return {"notification_payload": {"nivel": "info", "razonamiento": text}, "notification_ready": True}
 
     system_prompt = (
         "Sos el asistente virtual de una casa inteligente (SmartHome equipo69).\n"
