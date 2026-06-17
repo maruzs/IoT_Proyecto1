@@ -90,10 +90,13 @@ async def classify(message: str, ollama_client: Optional[object] = None) -> dict
     if first in _COMMAND_HELP:
         return {"intent": "command_help", "confidence": 1.0, "entities": {}}
 
-    # 2. Response confirmations / rejections — short responses
-    # Heuristic: message is short (≤30 chars) or consists only of confirmation/rejection words
+    # 2. Response confirmations / rejections — message is a standalone yes/no
+    #    Only trigger when confirmation/rejection words DOMINATE the message
+    #    (prevents "fijate si hay alguien" from being misclassified as confirmation)
     tokens_set = _tokens(raw)
-    if len(raw) <= 30 or tokens_set.issubset(_CONFIRM_WORDS | _REJECT_WORDS):
+    conf_rej_tokens = _CONFIRM_WORDS | _REJECT_WORDS
+    conf_rej_overlap = tokens_set & conf_rej_tokens
+    if conf_rej_overlap and len(conf_rej_overlap) >= len(tokens_set) * 0.5:
         if tokens_set & _CONFIRM_WORDS:
             return {"intent": "response_confirm", "confidence": 1.0, "entities": {}}
         if tokens_set & _REJECT_WORDS:
