@@ -118,29 +118,17 @@ async def _llm_deduce(message: str, ollama_client) -> dict:
     get_sensor_state(), get_system_status(), query_history(from, to, limit).
     """
     prompt = (
-        "Sos un clasificador de intenciones para un sistema SmartHome. "
-        "El usuario controla: LED alerta, LED puerta, cámara, notificaciones, silencio de alarmas. "
-        "También puede consultar: sensores (temperatura, humedad, gas, ruido), estado del sistema, historial.\n\n"
-        "Herramientas disponibles:\n"
-        "- activate_led_alerta(estado: bool)\n"
-        "- activate_led_puerta(accion: ON/OFF)\n"
-        "- trigger_camera(duracion: int)\n"
-        "- send_notification(mensaje: str)\n"
-        "- silence_alerts()\n"
-        "- get_sensor_state()\n"
-        "- get_system_status()\n"
-        "- query_history(from, to, limit)\n\n"
-        f"Mensaje del usuario: \"{message}\"\n\n"
-        "Respondé SOLO con un JSON en este formato exacto:\n"
-        '{"intent": "direct_action|query|command|ambiguous", '
-        '"tool": "nombre_de_la_herramienta_o_null", '
-        '"tool_args": {}|null, '
-        '"reasoning": "breve explicación"}'
+        "Clasificá este mensaje SmartHome. Herramientas: activate_led_alerta(estado), "
+        "activate_led_puerta(accion ON/OFF), trigger_camera(duracion), send_notification(mensaje), "
+        "silence_alerts(), get_sensor_state(), get_system_status(), query_history(from,to,limit).\n"
+        f"Mensaje: \"{message}\"\n"
+        'Respondé SOLO JSON: {"intent":"direct_action|query|command|ambiguous",'
+        '"tool":"nombre_o_null","tool_args":{},"reasoning":"breve"}'
     )
     try:
         raw = await asyncio.wait_for(
             ollama_client.generate(prompt, format_json=True),
-            timeout=5.0,
+            timeout=15.0,
         )
         # Try to parse as JSON
         import json as _json
