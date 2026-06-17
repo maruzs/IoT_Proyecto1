@@ -163,6 +163,29 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  digital-twin:
+    build:
+      context: ..
+      dockerfile: deploy/digital-twin/Dockerfile
+    ports:
+      - "8003:8000"
+    volumes:
+      - ./mosquitto/certs/ca.crt:/certs/ca.crt:ro
+      - ./data:/app/data
+    environment:
+      - MQTT_BROKER=${MQTT_BROKER:-mosquitto}
+      - MQTT_PORT=${MQTT_PORT:-8883}
+      - MQTT_USER=${MQTT_USER:-equipo69}
+      - MQTT_PASSWORD=${MQTT_PASS:-}
+      - MQTT_TLS=${MQTT_TLS:-true}
+      - MQTT_CA_CERT=${MQTT_CA_CERT:-/certs/ca.crt}
+      - EQUIPO_ID=${EQUIPO_ID:-equipo69}
+      - SNAPSHOT_PATH=/app/data/twin_snapshot.json
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   mosquitto_certs:
   mosquitto_data:
