@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import sys
 
@@ -64,6 +65,46 @@ async def startup():
     mqtt.connect()
     app.state.mqtt = mqtt
 
+    # ── LangGraph Agent Scheduler ──
+    if settings.AGENT_ENABLED:
+        from .langgraph_agent.graph import agent
+
+        async def _agent_scheduler():
+            logger.info("Agent scheduler started — interval=%ss", settings.AGENT_INTERVAL)
+            while True:
+                try:
+                    initial_state = {
+                        "mode": "active",
+                        "normal_readings": 0,
+                        "retry_count": 0,
+                        "max_retries": settings.MCP_MAX_RETRIES,
+                        "cycle_count": 0,
+                        "mcp_connected": True,
+                        "llm_available": True,
+                        "critical_active": False,
+                    }
+                    config = {"configurable": {"thread_id": "autonomous-cycle"}}
+                    result = await asyncio.to_thread(agent.invoke, initial_state, config)
+
+                    # Publish notification if ready
+                    notification = result.get("notification_payload")
+                    if notification and mqtt and mqtt.is_connected():
+                        try:
+                            mqtt.publish("llm/decision", notification)
+                            logger.info("Agent cycle: nivel=%s", notification.get("nivel", "unknown"))
+                        except Exception:
+                            logger.exception("Failed to publish agent cycle notification")
+
+                except Exception:
+                    logger.exception("Agent scheduler cycle failed — will retry")
+
+                await asyncio.sleep(settings.AGENT_INTERVAL)
+
+        app.state.agent_task = asyncio.create_task(_agent_scheduler())
+        logger.info("LangGraph agent scheduler started")
+    else:
+        app.state.agent_task = None
+
 
 @app.on_event("shutdown")
 async def shutdown():
@@ -83,6 +124,17 @@ async def shutdown():
             logger.info("MQTT publisher disconnected")
         except Exception:
             logger.exception("Error disconnecting MQTT publisher")
+
+    # Cancel agent scheduler
+    agent_task = getattr(app.state, "agent_task", None)
+    if agent_task is not None:
+        agent_task.cancel()
+        try:
+            await agent_task
+        except asyncio.CancelledError:
+            logger.info("Agent scheduler cancelled cleanly")
+        except Exception:
+            logger.exception("Error cancelling agent scheduler")
 
 
 app.include_router(routes.router)

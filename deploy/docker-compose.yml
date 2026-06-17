@@ -87,6 +87,10 @@ services:
       dockerfile: deploy/interfaz/Dockerfile
     ports:
       - "80:80"
+      - "443:443"
+    volumes:
+      - ./mosquitto/certs/server.crt:/etc/nginx/certs/cert.pem:ro
+      - ./mosquitto/certs/server.key:/etc/nginx/certs/key.pem:ro
     depends_on:
       - backend
     restart: unless-stopped
@@ -101,6 +105,9 @@ services:
       - ollama_data:/root/.ollama
     environment:
       - OLLAMA_MODEL=${OLLAMA_MODEL:-phi3:mini}
+      - OLLAMA_KEEP_ALIVE=-1
+      - OLLAMA_NUM_THREADS=6
+    mem_limit: 4g
     restart: unless-stopped
 
   llm-gateway:
@@ -123,6 +130,13 @@ services:
       - MQTT_TLS=${MQTT_TLS:-true}
       - MQTT_CA_CERT=${MQTT_CA_CERT:-/certs/ca.crt}
       - EQUIPO_ID=${EQUIPO_ID:-equipo69}
+      - MCP_SERVER_URL=${MCP_SERVER_URL:-https://mcp-server:8002/mcp}
+      - AGENT_ENABLED=${AGENT_ENABLED:-true}
+      - AGENT_INTERVAL=${AGENT_INTERVAL:-30}
+      - CRITICAL_GAS_THRESHOLD=${CRITICAL_GAS_THRESHOLD:-1020}
+      - CRITICAL_TEMP_THRESHOLD=${CRITICAL_TEMP_THRESHOLD:-30.0}
+      - LLM_TIMEOUT=${LLM_TIMEOUT:-3}
+      - MCP_MAX_RETRIES=${MCP_MAX_RETRIES:-3}
     depends_on:
       mosquitto:
         condition: service_healthy
