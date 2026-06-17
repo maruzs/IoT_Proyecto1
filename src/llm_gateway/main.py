@@ -69,6 +69,18 @@ async def startup():
     if settings.AGENT_ENABLED:
         from .langgraph_agent.graph import agent
 
+        # Pre-warm phi3:mini to avoid cold-start timeout on first user request
+        async def _prewarm_ollama():
+            await asyncio.sleep(2)  # let the server finish starting
+            try:
+                warm = ollama.generate("ping", format_json=False)
+                await asyncio.wait_for(warm, timeout=60.0)
+                logger.info("phi3:mini pre-warmed and ready")
+            except Exception:
+                logger.warning("phi3:mini pre-warm failed — first query may be slow")
+
+        asyncio.create_task(_prewarm_ollama())
+
         async def _agent_scheduler():
             logger.info("Agent scheduler started — interval=%ss", settings.AGENT_INTERVAL)
             while True:

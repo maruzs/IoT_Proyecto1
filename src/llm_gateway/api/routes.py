@@ -211,7 +211,7 @@ async def llm_agent(request: Request, body: AgentRequest):
         config = {"configurable": {"thread_id": f"user-{datetime.now(timezone.utc).timestamp()}"}}
         result = await asyncio.wait_for(
             agent_with_user.ainvoke(initial_state, config),
-            timeout=120.0,
+            timeout=180.0,
         )
     except asyncio.TimeoutError:
         logger.error("Agent graph timed out")
@@ -219,7 +219,7 @@ async def llm_agent(request: Request, body: AgentRequest):
             status_code=504,
             detail=AgentErrorResponse(
                 error_type="graph_timeout",
-                detail="LangGraph agent did not complete within 120 seconds",
+                detail="LangGraph agent did not complete within 180 seconds",
             ).model_dump(),
         )
     except Exception as exc:
