@@ -139,9 +139,9 @@ services:
     volumes:
       - ./mosquitto/certs:/certs:ro
     environment:
-      - MCP_NODE_RED_URL=http://nodered:1880
-      - MCP_DIGITAL_TWIN_URL=
-      - MCP_PORT=8002
+      - MCP_NODE_RED_URL=${MCP_NODE_RED_URL:-http://nodered:1880}
+      - MCP_DIGITAL_TWIN_URL=${MCP_DIGITAL_TWIN_URL:-}
+      - MCP_PORT=${MCP_PORT:-8002}
     depends_on:
       nodered:
         condition: service_started
