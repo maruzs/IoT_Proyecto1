@@ -349,3 +349,218 @@ async def notifying_node(state: SmartHomeState) -> dict:
         result["mode"] = "active"
 
     return result
+
+
+async def error_handler_node(state: SmartHomeState) -> dict:
+    """Log error, increment retry counter, and route to recovery or degraded."""
+    error_type = state.get("error_type")
+    retry_count = state.get("retry_count", 0) + 1
+    max_retries = state.get("max_retries", 3)
+
+    logger.warning(
+        "Error handler triggered: %s (retry %d/%d)",
+        error_type, retry_count, max_retries,
+    )
+
+    if retry_count <= max_retries:
+        return {
+            "error_type": None,
+            "retry_count": retry_count,
+        }
+
+    return {
+        "mode": "degraded",
+        "degraded_since": datetime.now().isoformat(),
+        "retry_count": 0,
+    }
+
+
+async def degraded_mode_node(state: SmartHomeState) -> dict:
+    """Enter degraded mode: disable MCP, notify user, no LLM/MCP calls."""
+    now = datetime.now().isoformat()
+    notification_payload = {
+        "nivel": "degraded",
+        "razonamiento": (
+            "El sistema entró en modo degradado debido a errores repetidos. "
+            "No se pueden ejecutar acciones hasta que se recupere la conexión con MCP."
+        ),
+        "timestamp": now,
+    }
+
+    return {
+        "mode": "degraded",
+        "mcp_connected": False,
+        "notification_payload": notification_payload,
+        "notification_ready": True,
+    }
+
+
+async def receiving_input_node(state: SmartHomeState) -> dict:
+    """Classify user input using the rule-first intent classifier."""
+    user_input = state.get("user_input_raw")
+    if not user_input:
+        return {"classified_intent": None}
+
+    from .intent_classifier import classify
+
+    result = classify(user_input)
+    return {
+        "classified_intent": result.get("intent"),
+        "intent_confidence": result.get("confidence", 0.0),
+    }
+
+
+async def command_router_node(state: SmartHomeState) -> dict:
+    """Route user commands to the appropriate handler or state change."""
+    intent = state.get("classified_intent")
+
+    if intent == "command_silence":
+        return {
+            "mode": "silenced",
+            "pending_actions": [{"tool": "silence_alerts", "args": {}}],
+        }
+
+    if intent == "command_status":
+        return {"classified_intent": "query"}
+
+    if intent == "command_help":
+        return {
+            "notification_payload": {
+                "nivel": "info",
+                "razonamiento": (
+                    "Comandos disponibles: /entendido (silenciar alertas), "
+                    "/status (ver estado), /ayuda (este mensaje). "
+                    "También podés preguntar por sensores o dar órdenes directas."
+                ),
+            },
+            "notification_ready": True,
+        }
+
+    return {}
+
+
+async def query_handler_node(state: SmartHomeState) -> dict:
+    """Fetch sensor and system status via MCP and build a natural-language response."""
+    mcp_client = MCPClient(url=settings.mcp_server_url)
+
+    try:
+        sensor_data = await mcp_client.call_tool("get_sensor_state")
+        system_data = await mcp_client.call_tool("get_system_status")
+    except Exception as exc:
+        logger.warning("MCP call failed in query_handler_node: %s", exc)
+        return {
+            "error_type": "mcp_unreachable",
+            "notification_payload": {
+                "nivel": "error",
+                "razonamiento": (
+                    "No se pudo obtener el estado del sistema. "
+                    "Intentá de nuevo en unos segundos."
+                ),
+            },
+            "notification_ready": True,
+        }
+
+    temp = sensor_data.get("temperature", "N/A")
+    hum = sensor_data.get("humidity", "N/A")
+    gas = sensor_data.get("gas_ppm", "N/A")
+    sound = sensor_data.get("sound_db", "N/A")
+
+    response = (
+        f"Temperatura: {temp}°C, Humedad: {hum}%, "
+        f"Gas: {gas} ppm, Ruido: {sound} dB."
+    )
+
+    return {
+        "notification_payload": {
+            "nivel": "info",
+            "razonamiento": response,
+        },
+        "notification_ready": True,
+    }
+
+
+async def direct_exec_node(state: SmartHomeState) -> dict:
+    """Parse direct action keywords from the user message and map to MCP tools."""
+    raw = state.get("user_input_raw", "").lower()
+
+    if "prendé" in raw and "led alerta" in raw:
+        action = {"tool": "activate_led_alerta", "args": {"estado": True}}
+    elif "apagá" in raw and "led alerta" in raw:
+        action = {"tool": "activate_led_alerta", "args": {"estado": False}}
+    else:
+        return {}
+
+    return {"pending_actions": [action]}
+
+
+async def waiting_confirmation_node(state: SmartHomeState) -> dict:
+    """Ask the user to confirm a pending action before execution."""
+    pending = state.get("pending_actions", [])
+    action_str = ", ".join(a.get("tool", "acción") for a in pending) if pending else "acción"
+
+    return {
+        "needs_confirmation": True,
+        "notification_payload": {
+            "nivel": "confirm",
+            "razonamiento": (
+                f"Se requiere confirmación para ejecutar: {action_str}. "
+                "Respondé 'sí' para confirmar o 'no' para cancelar."
+            ),
+        },
+        "notification_ready": True,
+    }
+
+
+async def waiting_clarification_node(state: SmartHomeState) -> dict:
+    """Request clarification from the user; give up after 3 attempts."""
+    clarification_count = state.get("clarification_count", 0) + 1
+
+    if clarification_count > 2:
+        return {
+            "classified_intent": "ambiguous",
+            "clarification_asked": False,
+            "clarification_count": clarification_count,
+        }
+
+    return {
+        "clarification_asked": True,
+        "clarification_count": clarification_count,
+        "notification_payload": {
+            "nivel": "clarify",
+            "razonamiento": (
+                "No entendí bien tu mensaje. ¿Podés reformularlo? "
+                "Por ejemplo: 'prendé led alerta', '¿qué temperatura hay?' o '/status'."
+            ),
+        },
+        "notification_ready": True,
+    }
+
+
+async def silenced_node(state: SmartHomeState) -> dict:
+    """Silenced state: suppress alerts unless critical thresholds are breached."""
+    gas_ppm = state.get("gas_ppm", 0)
+    temperature = state.get("temperature", 0.0)
+
+    if gas_ppm > 1020 or temperature > 30:
+        return {
+            "critical_active": True,
+            "mode": "active",
+        }
+
+    mcp_client = MCPClient(url=settings.mcp_server_url)
+    try:
+        await mcp_client.call_tool("silence_alerts")
+    except Exception as exc:
+        logger.warning("MCP call failed in silenced_node: %s", exc)
+        return {
+            "error_type": "mcp_execution_fail",
+            "retry_count": state.get("retry_count", 0) + 1,
+        }
+
+    normal_readings = state.get("normal_readings", 0) + 1
+    result: dict = {"normal_readings": normal_readings}
+
+    if normal_readings >= 3:
+        result["mode"] = "active"
+
+    return result
