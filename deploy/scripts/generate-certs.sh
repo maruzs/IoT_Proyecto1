@@ -75,6 +75,24 @@ openssl x509 -req -in "${CERTS_DIR}/server.csr" \
     -extfile <(printf "subjectAltName=${SAN}") 2>/dev/null
 
 # ---------------------------------------------------------------------------
+# Generate MCP server key and certificate signed by CA (idempotent)
+# ---------------------------------------------------------------------------
+if [ ! -f "${CERTS_DIR}/mcp-server.crt" ] || [ ! -f "${CERTS_DIR}/mcp-server.key" ]; then
+    echo "[3/5] Generating MCP server key and certificate..."
+    openssl genrsa -out "${CERTS_DIR}/mcp-server.key" 2048 2>/dev/null
+    openssl req -new -key "${CERTS_DIR}/mcp-server.key" \
+        -out "${CERTS_DIR}/mcp-server.csr" \
+        -subj "/C=AR/O=SmartHomeIoT/CN=mcp-server" 2>/dev/null
+    openssl x509 -req -in "${CERTS_DIR}/mcp-server.csr" \
+        -CA "${CERTS_DIR}/ca.crt" -CAkey "${CERTS_DIR}/ca.key" \
+        -CAcreateserial -out "${CERTS_DIR}/mcp-server.crt" -days 365 \
+        -extfile <(printf "subjectAltName=DNS:mcp-server,DNS:localhost") 2>/dev/null
+    rm -f "${CERTS_DIR}/mcp-server.csr" "${CERTS_DIR}/ca.srl"
+else
+    echo "[3/5] MCP server certificate already exists, skipping..."
+fi
+
+# ---------------------------------------------------------------------------
 # Clean up intermediate files
 # ---------------------------------------------------------------------------
 rm -f "${CERTS_DIR}/server.csr" "${CERTS_DIR}/ca.srl"
@@ -82,7 +100,7 @@ rm -f "${CERTS_DIR}/server.csr" "${CERTS_DIR}/ca.srl"
 # ---------------------------------------------------------------------------
 # Generate Mosquitto password file
 # ---------------------------------------------------------------------------
-echo "[3/4] Generating Mosquitto password file..."
+echo "[4/5] Generating Mosquitto password file..."
 rm -f "${PASSWD_FILE}"
 if command -v mosquitto_passwd &>/dev/null; then
     mosquitto_passwd -b -c "${PASSWD_FILE}" "${MQTT_USER}" "${MQTT_PASSWORD}"
@@ -97,15 +115,17 @@ fi
 # ---------------------------------------------------------------------------
 # Fix permissions for Docker volume mounts (mosquitto runs as uid 1883:1883)
 # ---------------------------------------------------------------------------
-chmod 644 "${PASSWD_FILE}" "${CERTS_DIR}/ca.crt" "${CERTS_DIR}/ca.key" "${CERTS_DIR}/server.crt" "${CERTS_DIR}/server.key"
+chmod 644 "${PASSWD_FILE}" "${CERTS_DIR}/ca.crt" "${CERTS_DIR}/ca.key" "${CERTS_DIR}/server.crt" "${CERTS_DIR}/server.key" "${CERTS_DIR}/mcp-server.crt" "${CERTS_DIR}/mcp-server.key"
 
 # ---------------------------------------------------------------------------
 # Verify outputs
 # ---------------------------------------------------------------------------
-echo "[4/4] Verifying certificates..."
+echo "[5/5] Verifying certificates..."
 openssl x509 -in "${CERTS_DIR}/ca.crt" -noout -subject -dates
 openssl x509 -in "${CERTS_DIR}/server.crt" -noout -subject -dates -ext subjectAltName
+openssl x509 -in "${CERTS_DIR}/mcp-server.crt" -noout -subject -dates -ext subjectAltName
 openssl verify -CAfile "${CERTS_DIR}/ca.crt" "${CERTS_DIR}/server.crt" >/dev/null
+openssl verify -CAfile "${CERTS_DIR}/ca.crt" "${CERTS_DIR}/mcp-server.crt" >/dev/null
 
 echo ""
 echo "============================================================"
@@ -117,6 +137,8 @@ echo "  ${CERTS_DIR}/ca.crt"
 echo "  ${CERTS_DIR}/ca.key"
 echo "  ${CERTS_DIR}/server.crt"
 echo "  ${CERTS_DIR}/server.key"
+echo "  ${CERTS_DIR}/mcp-server.crt"
+echo "  ${CERTS_DIR}/mcp-server.key"
 echo "  ${PASSWD_FILE}"
 echo ""
 echo "IMPORTANT: Keep ca.key and server.key secure. Do NOT commit them to git."
