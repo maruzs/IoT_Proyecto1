@@ -21,4 +21,13 @@ class Settings(BaseSettings):
 
     EQUIPO_ID: str = "equipo69"
 
+    # Agent configuration (T-009)
+    MCP_SERVER_URL: str = "https://mcp-server:8002/mcp"
+    AGENT_ENABLED: bool = True
+    AGENT_INTERVAL: int = 30
+    CRITICAL_GAS_THRESHOLD: int = 1020
+    CRITICAL_TEMP_THRESHOLD: float = 30.0
+    LLM_TIMEOUT: int = 3
+    MCP_MAX_RETRIES: int = 3
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
