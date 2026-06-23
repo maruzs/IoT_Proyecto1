@@ -23,7 +23,7 @@ RUN openssl genrsa -out ca.key 2048 \
     && chmod 644 ca.crt ca.key server.crt server.key
 
 # Stage 2: Imagen final de Mosquitto
-FROM eclipse-mosquitto:2
+FROM eclipse-mosquitto:1.6
 
 COPY --from=cert-builder /certs/ /mosquitto/certs/
 COPY --from=cert-builder /certs/ca.crt /ca.crt

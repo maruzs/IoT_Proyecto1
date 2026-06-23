@@ -51,5 +51,8 @@ for user in MKR1000 ESP32CAM BACKEND NODERED LLMGATEWAY DIGITALTWIN; do
     fi
 done
 
+# Fix passwd file permissions
+chmod 0644 "$PASSWD_FILE"
+
 # All files present — start Mosquitto
 exec mosquitto -c /mosquitto/config/mosquitto.conf

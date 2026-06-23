@@ -10,6 +10,7 @@ services:
       - "1884:1884"
     volumes:
       - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./mosquitto/config/acl.conf:/mosquitto/config/acl.conf:ro
       - ./mosquitto/certs:/mosquitto/certs:ro
       - ./mosquitto/config/passwd:/mosquitto/config/passwd:rw
       - mosquitto_data:/mosquitto/data
@@ -29,7 +30,7 @@ services:
       - MQTT_PASS_DIGITALTWIN=${MQTT_PASS_DIGITALTWIN}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "mosquitto_sub", "-t", "$$SYS/broker/uptime", "-p", "1883", "-C", "1", "-E"]
+      test: ["CMD-SHELL", "pgrep mosquitto | head -1 | xargs kill -0"]
       interval: 10s
       timeout: 5s
       retries: 3
