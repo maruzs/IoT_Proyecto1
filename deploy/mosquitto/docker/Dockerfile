@@ -6,8 +6,6 @@
 FROM alpine:3 AS cert-builder
 RUN apk add --no-cache openssl mosquitto
 
-ARG MQTT_USER=equipo69
-ARG MQTT_PASSWORD=IoT2026Secure!
 ARG MQTT_BROKER_IP=127.0.0.1
 
 WORKDIR /certs
@@ -22,16 +20,20 @@ RUN openssl genrsa -out ca.key 2048 \
     && openssl x509 -req -in /tmp/server.csr \
         -CA ca.crt -CAkey ca.key -CAcreateserial \
         -out server.crt -days 365 -extfile /tmp/san.ext \
-    && mosquitto_passwd -b -c /passwd ${MQTT_USER} ${MQTT_PASSWORD} \
-    && chmod 644 ca.crt ca.key server.crt server.key /passwd
+    && chmod 644 ca.crt ca.key server.crt server.key
 
 # Stage 2: Imagen final de Mosquitto
 FROM eclipse-mosquitto:2
 
 COPY --from=cert-builder /certs/ /mosquitto/certs/
-COPY --from=cert-builder /passwd /mosquitto/config/passwd
 COPY --from=cert-builder /certs/ca.crt /ca.crt
 
 COPY deploy/mosquitto/config/mosquitto.conf /mosquitto/config/mosquitto.conf
+COPY deploy/mosquitto/config/acl.conf /mosquitto/config/acl.conf
+COPY deploy/mosquitto/config/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 EXPOSE 8883
+EXPOSE 1884
+
+ENTRYPOINT ["/entrypoint.sh"]
