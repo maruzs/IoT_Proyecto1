@@ -31,7 +31,7 @@ services:
       - MQTT_PASS_DIGITALTWIN=${MQTT_PASS_DIGITALTWIN}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pgrep mosquitto | head -1 | xargs kill -0"]
+      test: [ "CMD-SHELL", "pgrep mosquitto | head -1 | xargs kill -0" ]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -75,7 +75,7 @@ services:
       - /dev/video0:/dev/video0
       - /dev/video1:/dev/video1
     group_add:
-      - "983"  # video group
+      - "983" # video group
     environment:
       - MODE=PROD_MQTT
       - EQUIPO_ID=equipo69
