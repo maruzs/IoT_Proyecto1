@@ -3,6 +3,7 @@ services:
     build:
       context: ..
       dockerfile: deploy/mosquitto/docker/Dockerfile
+      network: host
       args:
         - MQTT_USER=${MQTT_USER:-equipo69}
         - MQTT_PASSWORD=${MQTT_PASSWORD:-IoT2026Secure!}
@@ -28,6 +29,7 @@ services:
     build:
       context: ..
       dockerfile: deploy/nodered/Dockerfile
+      network: host
       args:
         - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
         - MQTT_USER=${MQTT_USER:-equipo69}
@@ -53,6 +55,7 @@ services:
     build:
       context: ..
       dockerfile: deploy/reconocimiento/Dockerfile
+      network: host
     ports:
       - "8000:8000"
     volumes:
@@ -85,6 +88,7 @@ services:
     build:
       context: ..
       dockerfile: deploy/interfaz/Dockerfile
+      network: host
     ports:
       - "80:80"
     depends_on:
@@ -95,6 +99,7 @@ services:
     build:
       context: ..
       dockerfile: deploy/ollama/Dockerfile
+      network: host
     ports:
       - "11434:11434"
     volumes:
@@ -107,6 +112,7 @@ services:
     build:
       context: ..
       dockerfile: deploy/llm-gateway/Dockerfile
+      network: host
     ports:
       - "8001:8000"
     volumes:
@@ -134,6 +140,7 @@ services:
     build:
       context: ..
       dockerfile: deploy/mcp-server/Dockerfile
+      network: host
     ports:
       - "8002:8002"
     volumes:
@@ -153,6 +160,7 @@ services:
     build:
       context: ..
       dockerfile: deploy/digital-twin/Dockerfile
+      network: host
     ports:
       - "8003:8000"
     volumes:
