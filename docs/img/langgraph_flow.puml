@@ -1,0 +1,82 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam stateBackgroundColor #F8F9FA
+skinparam stateBorderColor #666666
+skinparam stateFontSize 11
+skinparam stateFontName Arial
+skinparam arrowColor #333333
+skinparam stateArrowColor #333333
+
+title "LangGraph Agent — Flujo de Decisión (15 nodos)"
+
+state START as "__START__"
+state END_s as "__END__"
+
+state "monitoring\nLectura MCP" as MONITORING #D4EDDA
+state "evaluating\nUmbrales" as EVALUATING #D4EDDA
+state "critical_handler\nBypass crítico" as CRITICAL_H #FFE0E0
+state "deciding\nLLM Ollama" as DECIDING #FFF3CD
+state "executing\nMCP tools" as EXECUTING #CCE5FF
+state "notifying\nMQTT publish" as NOTIFYING #E0E0FF
+state "error_handler\nRetry + degraded" as ERROR_H #FFE0E0
+state "degraded_mode\nSin LLM/MCP" as DEGRADED #FFD7D7
+state "receiving_input\nIntento clasificador" as RECV_IN #D4EDDA
+state "command_router\n/status, /ayuda" as CMD_ROUTER #D4EDDA
+state "query_handler\nLLM query NL" as QUERY_H #D4EDDA
+state "direct_exec\nAcción directa" as DIRECT_EXEC #D4EDDA
+state "waiting_confirmation\nConfianza < 80%" as WAIT_CONFIRM #FFF3CD
+state "waiting_clarification\nNo entendido" as WAIT_CLARIFY #FFF3CD
+state "silenced\nModo silencio" as SILENCED #E0E0FF
+
+' Autonomous cycle
+START --> MONITORING : "Scheduler\n(auto cada 30s)"
+MONITORING --> EVALUATING : "normal"
+MONITORING --> CRITICAL_H : "gas > 1020\ntemp > 30"
+MONITORING --> ERROR_H : "MCP unreachable"
+
+EVALUATING --> DECIDING : "anomalía / cada 5 ciclos"
+EVALUATING --> NOTIFYING : "normal (sin LLM)"
+
+CRITICAL_H --> EXECUTING : "plan fijo\n(sin LLM)"
+
+DECIDING --> EXECUTING : "confianza ≥ 80%\nacción crítica"
+DECIDING --> WAIT_CONFIRM : "confianza < 80%\nacción riesgosa"
+DECIDING --> NOTIFYING : "nivel normal\nsin acciones"
+DECIDING --> ERROR_H : "LLM timeout/error"
+
+EXECUTING --> NOTIFYING : "éxito"
+EXECUTING --> ERROR_H : "MCP exec fail"
+
+NOTIFYING --> END_s : "publica decisión\nMQTT llm/decision"
+
+ERROR_H --> MONITORING : "retry ≤ 3"
+ERROR_H --> DEGRADED : "retry > 3"
+ERROR_H --> NOTIFYING : "give up"
+
+DEGRADED --> NOTIFYING : "notifica modo\ndegradado"
+
+' User input flow
+RECV_IN --> CMD_ROUTER : "comando\n(status/help/silence)"
+RECV_IN --> DIRECT_EXEC : "acción directa\n(prende LED, etc)"
+RECV_IN --> QUERY_H : "consulta\n(¿temp actual?)"
+RECV_IN --> DECIDING : "acción contextual"
+RECV_IN --> WAIT_CLARIFY : "ambiguo"
+RECV_IN --> EXECUTING : "confirmación\nusuario"
+
+CMD_ROUTER --> SILENCED : "silenciar"
+CMD_ROUTER --> NOTIFYING : "status/help"
+CMD_ROUTER --> CRITICAL_H : "crítico activo
+
+DIRECT_EXEC --> EXECUTING
+QUERY_H --> NOTIFYING
+
+WAIT_CONFIRM --> EXECUTING : "usuario: sí"
+WAIT_CONFIRM --> NOTIFYING : "usuario: no\ntimeout"
+
+WAIT_CLARIFY --> NOTIFYING : "max 3 intentos"
+
+SILENCED --> NOTIFYING : "normal"
+SILENCED --> CRITICAL_H : "crítico > umbral"
+
+@enduml

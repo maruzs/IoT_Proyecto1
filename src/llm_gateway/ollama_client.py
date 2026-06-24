@@ -33,18 +33,19 @@ class OllamaClient:
             headers={"Content-Type": "application/json"},
         )
 
-    async def generate(self, prompt: str, system_prompt: str | None = None) -> str:
+    async def generate(self, prompt: str, system_prompt: str | None = None, format_json: bool = True) -> str:
         """Send a prompt to Ollama and return the raw text response.
 
         Retries on TimeoutException and HTTPStatusError with exponential
         backoff (1s, 2s, 4s, ... up to max_retries).
         """
-        payload = {
+        payload: dict = {
             "model": self.model,
             "prompt": prompt,
             "stream": False,
-            "format": "json",
         }
+        if format_json:
+            payload["format"] = "json"
         if system_prompt is not None:
             payload["system"] = system_prompt
 

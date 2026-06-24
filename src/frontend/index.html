@@ -11,7 +11,12 @@
         <h1>Control de Acceso IoT</h1>
     </header>
 
-    <main>
+    <nav class="nav-bar">
+        <button id="tab-reconocimiento" class="nav-tab active">Reconocimiento</button>
+        <button id="tab-agente" class="nav-tab">Agente</button>
+    </nav>
+
+    <main id="view-reconocimiento">
         <!-- Live Camera Feed -->
         <section id="live-feed">
             <h2>Cámara en vivo</h2>
@@ -56,6 +61,17 @@
         </section>
     </main>
 
-    <script src="app.js"></script>
+    <main id="view-agente" style="display:none;">
+        <section id="chat-section">
+            <h2>Agente IoT</h2>
+            <div id="chat-messages" class="chat-messages"></div>
+            <div class="chat-input-row">
+                <input type="text" id="chat-input" class="chat-input" placeholder="Escribí tu consulta..." autocomplete="off">
+                <button id="chat-send" class="chat-send">Enviar</button>
+            </div>
+        </section>
+    </main>
+
+    <script type="module" src="app.js"></script>
 </body>
 </html>

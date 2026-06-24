@@ -1,0 +1,92 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+skinparam defaultFontSize 11
+skinparam defaultFontName Arial
+skinparam ArrowColor #333333
+skinparam packageBorderColor #666666
+skinparam packageBackgroundColor #F8F9FA
+
+title "Arquitectura Unidad 2 — Seguridad, LLM Local y Agente Autónomo"
+
+' ============================================================================
+' Devices (physical)
+' ============================================================================
+rectangle "<b>MKR1000</b>\nSensores + Actuadores\n:1884 (plain+auth)" as MKR1000 #FFE0E0
+rectangle "<b>ESP32-CAM</b>\nCámara bajo demanda\n:8883 (TLS)" as ESP32CAM #FFE0E0
+
+' ============================================================================
+' MQTT Broker
+' ============================================================================
+rectangle "<b>Mosquitto</b>\n:8883 TLS + ACLs\n:1884 plain+auth\n:1883 health (local)" as MOSQUITTO #FFF3CD
+
+' ============================================================================
+' LLM + Agent layer
+' ============================================================================
+package "Capa LLM y Agente" {
+    rectangle "<b>LLM Gateway</b>\nFastAPI :8001\nMQTT + Ollama" as LLM_GW #D4EDDA
+    rectangle "<b>MCP Server</b>\nFastMCP :8002 (TLS)\n8 tools Streamable HTTP" as MCP #D4EDDA
+    rectangle "<b>LangGraph Agent</b>\n15 nodos, scheduler\nautónomo cada 30s" as AGENT #D4EDDA
+    rectangle "<b>Ollama</b>\nphi3:mini\n:11434" as OLLAMA #D4EDDA
+}
+
+' ============================================================================
+' Orchestration + UI
+' ============================================================================
+package "Orquestación y UI" {
+    rectangle "<b>Node-RED</b>\nDashboard :1880\nTelegram Bot\nReglas + Historial\n9 endpoints REST" as NODERED #CCE5FF
+    rectangle "<b>Backend FastAPI</b>\nFace Recognition\nAPI REST :8000" as BACKEND #CCE5FF
+    rectangle "<b>Frontend</b>\nHTML/JS + Nginx :80\nChat agente NL" as FRONTEND #CCE5FF
+}
+
+' ============================================================================
+' Connections
+' ============================================================================
+
+' MKR1000 -> Mosquitto
+MKR1000 -right-> MOSQUITTO : "smarthome/equipo69/datos\n(alerta, control/led, ...)"
+
+' ESP32-CAM -> Mosquitto
+ESP32CAM -right-> MOSQUITTO : "camara/evento\ncamara/imagen"
+
+' Mosquitto -> Backend
+MOSQUITTO -down-> BACKEND : "camara/imagen\nacceso/estado"
+
+' Mosquitto -> Node-RED
+MOSQUITTO -down-> NODERED : "smarthome/+/datos\nllm/decision"
+
+' Mosquitto -> LLM Gateway
+MOSQUITTO -down-> LLM_GW : "MQTT TLS :8883"
+
+' LLM Gateway -> Ollama
+LLM_GW -down-> OLLAMA : "HTTP /api/generate\nphi3:mini"
+
+' LangGraph interconnections
+LLM_GW -left-> AGENT : "Scheduler\nintegrado"
+AGENT -right-> MCP : "MCP Protocol\nStreamable HTTP"
+MCP -right-> NODERED : "HTTP REST :1880"
+NODERED -up-> MOSQUITTO : "control/led, control/buzzer\ncamara/captura"
+
+' User interactions
+FRONTEND -down-> BACKEND : "HTTP /api/*"
+FRONTEND -down-> LLM_GW : "HTTP /llm/agent"
+
+' Telegram
+NODERED --> () TELEGRAM : "Alertas + /status"
+
+legend right
+Nota: MCP Server nunca publica directo a MQTT.
+Node-RED es el gatekeeper de actuadores.
+El LLM solo publica a llm/decision.
+====
+Usuarios MQTT:
+- mkr1000-equipo69
+- esp32cam-equipo69
+- backend-equipo69
+- nodered-smarthome
+- llm-gateway-equipo69
+- digital-twin-equipo69
+endlegend
+
+@enduml

@@ -68,7 +68,7 @@ actuadores vía MQTT a través de un broker Mosquitto.
 | **Arduino MKR1000** | Nodo sensor / actuador | Lee SHT30 (temp/humedad), MQ-2 (gas), MAX4466 (sonido). Controla LED alerta y LED puerta. Publica JSON de sensores cada 2s y recibe comandos ON/OFF por MQTT. |
 | **ESP32-CAM** | Cámara bajo demanda | Recibe comandos MQTT (`camara/captura`) y captura frames en ráfaga (~4 fps durante 5s). Sin stream MJPEG — cada JPEG se publica vía MQTT. |
 | **Mosquitto** | Broker MQTT seguro | Punto central de comunicación. Puerto 8883 con TLS + autenticación para servicios internos (backend, Node-RED, ESP32-CAM). Puerto 1884 sin TLS para MKR1000 (WiFi101 no compatible con TLS moderno). Healthcheck en 1883 (localhost). Certificados autofirmados generados en el build de Docker. |
-| **Node-RED** | Dashboard + reglas + notificaciones + REST API | Dashboard web con variables, gráfico histórico y controles. Reglas automáticas (temperatura alta, gas alto). Bot de Telegram con comandos `/status` y `/ayuda`. Registro histórico en CSV. **8 endpoints REST** para tools MCP (T-008). |
+| **Node-RED** | Dashboard + reglas + notificaciones + REST API | Dashboard web con variables, gráfico histórico, controles y widget de decisiones LLM. Reglas automáticas (temperatura alta, gas alto). Bot de Telegram con comandos `/status` y `/ayuda`. Registro histórico en CSV. **9 endpoints REST** para tools MCP (T-008) y decisiones LLM (T-011). |
 | **MCP Server** | Sidecar MCP para LangGraph | Servidor Python FastMCP en :8002 con TLS. Expone 8 tools MCP (`activate_led_alerta`, `activate_led_puerta`, `send_notification`, `silence_alerts`, `trigger_camera`, `get_sensor_state`, `query_history`, `get_system_status`) vía Streamable HTTP. Traduce llamadas MCP → HTTP a Node-RED. |
 | **LLM Gateway** | Gateway LLM local | FastAPI en :8001. Expone `POST /llm/decide` (contexto de sensores → Ollama → decisión JSON → MQTT). Cliente MQTT TLS. |
 | **Ollama** | LLM local | Corre `phi3:mini` en :11434. Usado por LLM Gateway y LangGraph Agent. |
@@ -212,6 +212,8 @@ Ejemplo:
 | `smarthome/equipo69/llm/decision` | LLM Gateway → broker | `{"nivel":"critico","razonamiento":"Gas elevado..."}` |
 | `smarthome/equipo69/llm/respuesta` | LLM Gateway → broker | Respuesta en lenguaje natural a consultas del dashboard |
 
+> **T-011 (Node-RED LLM Integration):** Node-RED se suscribe a `llm/decision`, expone `GET /api/llm-decision` y muestra un widget en el dashboard (Security group) con el nivel de alerta codificado por color y el razonamiento de la decisión.
+
 ### QoS por tipo de mensaje
 
 | Tipo | QoS | Retain |
@@ -265,6 +267,7 @@ Base: `http://localhost:1880`. Expone endpoints usados por el MCP Sidecar.
 | `POST` | `/api/notifications` | Body: `{"mensaje": "texto"}` |
 | `POST` | `/api/alerts/silence` | Apaga LED de alerta |
 | `POST` | `/api/camera/trigger` | Body: `{"duracion": 5}` |
+| `GET` | `/api/llm-decision` | Última decisión del LLM Gateway (`{accion, nivel, razonamiento, timestamp}`). 503 si no hay decisión todavía. |
 
 ## Flashear firmware
 
@@ -490,6 +493,7 @@ URL: `http://localhost:1880/ui`
 - Estado de alerta
 - Botones de control manual (LED, buzzer)
 - Imagen actual de la cámara
+- **Widget de decisión LLM** — badge de color por nivel de alerta + razonamiento (Security group)
 
 ### Reglas automáticas
 
@@ -510,17 +514,44 @@ Node-RED guarda timestamp, temperatura, humedad, gas y alertas en `deploy/nodere
 
 Copia `nodered/flows.json` (y `flows_cred.json` si existe) al contenedor y hace reload vía API de Node-RED sin reiniciar.
 
+## Documentación
+
+El proyecto cuenta con dos niveles de documentación:
+
+- **README.md** (este archivo): Documentación rápida con arquitectura, setup, API, troubleshooting y roadmap.
+- **`docs/`**: Documentación formal en LaTeX para informes técnicos, incluyendo:
+  - [`docs/informe_u2.tex`](docs/informe_u2.tex) — Informe completo de Unidad 2 (seguridad, LLM, agente autónomo)
+  - [`docs/img/arqui_u2.puml`](docs/img/arqui_u2.puml) — Diagrama PlantUML de arquitectura U2
+  - [`docs/img/langgraph_flow.puml`](docs/img/langgraph_flow.puml) — Diagrama PlantUML del flujo LangGraph
+  - [`docs/Makefile`](docs/Makefile) — Para compilar los PDFs
+
+Para compilar la documentación LaTeX:
+```bash
+cd docs
+make        # requiere pdflatex
+# o manual:
+pdflatex informe_u2.tex && pdflatex informe_u2.tex
+```
+
 ## Estructura del repositorio
 
 ```
 IoT_Proyecto1/
+├── docs/                         # Documentación formal (LaTeX)
+│   ├── informe_u2.tex            #   Informe técnico Unidad 2
+│   ├── Makefile                  #   Compilación de PDFs
+│   └── img/                      #   Diagramas PlantUML
 ├── deploy/
-│   ├── docker-compose.yml        # Orquestación de los 4 servicios
+│   ├── docker-compose.yml        # Orquestación de los 8 servicios
 │   ├── .env.example              # Template de variables de entorno
 │   ├── .env                      # Variables reales (gitignored)
+│   ├── digital-twin/             # Dockerfile del Digital Twin
 │   ├── mosquitto/config/         # Config del broker
 │   ├── nodered/                  # Dockerfile + entrypoint de Node-RED
 │   ├── reconocimiento/           # Dockerfile del backend Python
+│   ├── llm-gateway/              # Dockerfile del LLM Gateway
+│   ├── mcp-server/               # Dockerfile del MCP Server
+│   ├── ollama/                   # Dockerfile de Ollama
 │   └── interfaz/                 # Dockerfile + nginx.conf del frontend
 ├── src/
 │   ├── backend/                  # FastAPI + face_recognition + cliente MQTT

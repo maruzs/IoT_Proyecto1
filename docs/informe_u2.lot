@@ -1,0 +1,8 @@
+\babel@toc {spanish}{}\relax 
+\contentsline {table}{\numberline {1}{\ignorespaces Archivos de certificados TLS generados.}}{6}{table.caption.5}%
+\contentsline {table}{\numberline {2}{\ignorespaces Usuarios MQTT y sus permisos ACL.}}{7}{table.caption.6}%
+\contentsline {table}{\numberline {3}{\ignorespaces Lógica del fallback determinístico cuando el LLM no está disponible.}}{10}{table.caption.7}%
+\contentsline {table}{\numberline {4}{\ignorespaces Tools MCP disponibles para el agente LangGraph.}}{11}{table.4}%
+\contentsline {table}{\numberline {5}{\ignorespaces Nodos del StateGraph LangGraph.}}{12}{table.5}%
+\contentsline {table}{\numberline {6}{\ignorespaces Bitácora de problemas del LLM y soluciones aplicadas.}}{14}{table.6}%
+\contentsline {table}{\numberline {7}{\ignorespaces Comparación entre control determinista y basado en LLM.}}{15}{table.caption.9}%

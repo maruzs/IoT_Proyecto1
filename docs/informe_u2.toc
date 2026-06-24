@@ -1,0 +1,40 @@
+\babel@toc {spanish}{}\relax 
+\contentsline {section}{\numberline {1}Introducción}{4}{section.1}%
+\contentsline {section}{\numberline {2}Infraestructura y Seguridad MQTT}{5}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Arquitectura General}{5}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Configuración TLS}{6}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Generación de Certificados}{6}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Autenticación y Control de Acceso (ACL)}{6}{subsection.2.4}%
+\contentsline {subsection}{\numberline {2.5}Consideración de Seguridad: Puerto 1883}{7}{subsection.2.5}%
+\contentsline {section}{\numberline {3}Actualización de Firmware con Soporte TLS}{8}{section.3}%
+\contentsline {subsection}{\numberline {3.1}ESP32-CAM: Conexión Segura}{8}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Externalización de Credenciales}{8}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Lógica de Reconexión}{8}{subsection.3.3}%
+\contentsline {section}{\numberline {4}LLM Local e Integración}{9}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Ollama + phi3:mini}{9}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}LLM Gateway (FastAPI)}{9}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Prompts Dinámicos}{10}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Manejo de Errores y Fallback Determinístico}{10}{subsection.4.4}%
+\contentsline {section}{\numberline {5}Servidor MCP (Model Context Protocol)}{11}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Tools Disponibles}{11}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Flujo de Comunicación}{11}{subsection.5.2}%
+\contentsline {section}{\numberline {6}Agente Autónomo LangGraph}{12}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Arquitectura del Grafo}{12}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Descripción de Nodos}{12}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}Ruteo Condicional}{13}{subsection.6.3}%
+\contentsline {subsection}{\numberline {6.4}Bypass Crítico (Sin LLM)}{13}{subsection.6.4}%
+\contentsline {section}{\numberline {7}Bitácora de Problemas Detectados y Soluciones}{14}{section.7}%
+\contentsline {section}{\numberline {8}Ensayo Crítico: LLM vs. Control Determinista}{15}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Introducción}{15}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}Tabla Comparativa}{15}{subsection.8.2}%
+\contentsline {subsection}{\numberline {8.3}Análisis}{15}{subsection.8.3}%
+\contentsline {subsection}{\numberline {8.4}Conclusión}{16}{subsection.8.4}%
+\contentsline {section}{\numberline {9}Análisis de Vulnerabilidad IoT}{17}{section.9}%
+\contentsline {subsection}{\numberline {9.1}Introducción}{17}{subsection.9.1}%
+\contentsline {subsection}{\numberline {9.2}Vulnerabilidad 1: MKR1000 sin TLS}{17}{subsection.9.2}%
+\contentsline {subsection}{\numberline {9.3}Vulnerabilidad 2: Healthcheck sin autenticación}{17}{subsection.9.3}%
+\contentsline {subsection}{\numberline {9.4}Vulnerabilidad 3: Certificados autofirmados}{17}{subsection.9.4}%
+\contentsline {subsection}{\numberline {9.5}Vulnerabilidad 4: Sin rate limiting en API}{18}{subsection.9.5}%
+\contentsline {subsection}{\numberline {9.6}Vulnerabilidad 5: Exposición de puertos Docker}{18}{subsection.9.6}%
+\contentsline {subsection}{\numberline {9.7}Plan de Mitigación Priorizado}{18}{subsection.9.7}%
+\contentsline {section}{\numberline {10}Conclusiones}{19}{section.10}%
