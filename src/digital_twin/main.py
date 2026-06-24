@@ -134,10 +134,10 @@ async def dev_telemetry_generator() -> None:
 
 async def minute_consolidation_loop() -> None:
     """Every 60 seconds (or 5 seconds in DEV_LOCAL), consolidate the readings into the history."""
-    interval = 5 if MODE == "DEV_LOCAL" else 60
+    interval = int(os.environ.get("CONSOLIDATION_INTERVAL", "5" if MODE == "DEV_LOCAL" else "60"))
     logger.info("Consolidation loop starting with interval: %d seconds", interval)
     try:
-        if MODE != "DEV_LOCAL":
+        if MODE != "DEV_LOCAL" and "CONSOLIDATION_INTERVAL" not in os.environ:
             # Align roughly to the start of a minute boundary
             now = datetime.now()
             delay = 60 - now.second - (now.microsecond / 1_000_000.0)
@@ -154,8 +154,8 @@ async def minute_consolidation_loop() -> None:
 
 async def prediction_scheduler_loop() -> None:
     """Every 10 minutes (or 15 seconds in DEV_LOCAL), calculate predictions and publish them."""
-    interval = 15 if MODE == "DEV_LOCAL" else 600
-    startup_delay = 5 if MODE == "DEV_LOCAL" else 30
+    interval = int(os.environ.get("PREDICTION_INTERVAL", "15" if MODE == "DEV_LOCAL" else "600"))
+    startup_delay = int(os.environ.get("PREDICTION_STARTUP_DELAY", "5" if MODE == "DEV_LOCAL" else "30"))
     
     logger.info("Prediction scheduler loop starting (interval=%ds, startup_delay=%ds)", interval, startup_delay)
     try:

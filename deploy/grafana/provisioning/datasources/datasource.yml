@@ -1,0 +1,16 @@
+apiVersion: 1
+
+datasources:
+  - name: InfluxDB
+    uid: InfluxDB
+    type: influxdb
+    access: proxy
+    url: http://influxdb:8086
+    jsonData:
+      version: Flux
+      organization: smarthome
+      defaultBucket: sensores
+    secureJsonData:
+      token: myinfluxadmintoken123
+    isDefault: true
+    editable: false
