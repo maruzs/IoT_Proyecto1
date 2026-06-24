@@ -514,17 +514,44 @@ Node-RED guarda timestamp, temperatura, humedad, gas y alertas en `deploy/nodere
 
 Copia `nodered/flows.json` (y `flows_cred.json` si existe) al contenedor y hace reload vía API de Node-RED sin reiniciar.
 
+## Documentación
+
+El proyecto cuenta con dos niveles de documentación:
+
+- **README.md** (este archivo): Documentación rápida con arquitectura, setup, API, troubleshooting y roadmap.
+- **`docs/`**: Documentación formal en LaTeX para informes técnicos, incluyendo:
+  - [`docs/informe_u2.tex`](docs/informe_u2.tex) — Informe completo de Unidad 2 (seguridad, LLM, agente autónomo)
+  - [`docs/img/arqui_u2.puml`](docs/img/arqui_u2.puml) — Diagrama PlantUML de arquitectura U2
+  - [`docs/img/langgraph_flow.puml`](docs/img/langgraph_flow.puml) — Diagrama PlantUML del flujo LangGraph
+  - [`docs/Makefile`](docs/Makefile) — Para compilar los PDFs
+
+Para compilar la documentación LaTeX:
+```bash
+cd docs
+make        # requiere pdflatex
+# o manual:
+pdflatex informe_u2.tex && pdflatex informe_u2.tex
+```
+
 ## Estructura del repositorio
 
 ```
 IoT_Proyecto1/
+├── docs/                         # Documentación formal (LaTeX)
+│   ├── informe_u2.tex            #   Informe técnico Unidad 2
+│   ├── Makefile                  #   Compilación de PDFs
+│   └── img/                      #   Diagramas PlantUML
 ├── deploy/
-│   ├── docker-compose.yml        # Orquestación de los 4 servicios
+│   ├── docker-compose.yml        # Orquestación de los 8 servicios
 │   ├── .env.example              # Template de variables de entorno
 │   ├── .env                      # Variables reales (gitignored)
+│   ├── digital-twin/             # Dockerfile del Digital Twin
 │   ├── mosquitto/config/         # Config del broker
 │   ├── nodered/                  # Dockerfile + entrypoint de Node-RED
 │   ├── reconocimiento/           # Dockerfile del backend Python
+│   ├── llm-gateway/              # Dockerfile del LLM Gateway
+│   ├── mcp-server/               # Dockerfile del MCP Server
+│   ├── ollama/                   # Dockerfile de Ollama
 │   └── interfaz/                 # Dockerfile + nginx.conf del frontend
 ├── src/
 │   ├── backend/                  # FastAPI + face_recognition + cliente MQTT

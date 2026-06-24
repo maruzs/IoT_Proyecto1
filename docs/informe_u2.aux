@@ -1,0 +1,88 @@
+\relax 
+\providecommand \babel@aux [2]{\global \let \babel@toc \@gobbletwo }
+\@nameuse{bbl@beforestart}
+\catcode `"\active 
+\catcode `<\active 
+\catcode `>\active 
+\@nameuse{es@quoting}
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\babel@aux{spanish}{}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introducción}{4}{section.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}Infraestructura y Seguridad MQTT}{5}{section.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Arquitectura General}{5}{subsection.2.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Arquitectura del sistema en Unidad 2, mostrando los componentes de seguridad, LLM y agente autónomo.}}{5}{figure.caption.4}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:arqui_u2}{{1}{5}{Arquitectura del sistema en Unidad 2, mostrando los componentes de seguridad, LLM y agente autónomo}{figure.caption.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Configuración TLS}{6}{subsection.2.2}\protected@file@percent }
+\newlabel{lst:mosquitto_conf}{{1}{6}{Configuración de Mosquitto con TLS y ACLs por listener}{lstlisting.1}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {1}{\ignorespaces Configuración de Mosquitto con TLS y ACLs por listener.}}{6}{lstlisting.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Generación de Certificados}{6}{subsection.2.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Archivos de certificados TLS generados.}}{6}{table.caption.5}\protected@file@percent }
+\newlabel{tab:certificados}{{1}{6}{Archivos de certificados TLS generados}{table.caption.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Autenticación y Control de Acceso (ACL)}{6}{subsection.2.4}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Usuarios MQTT y sus permisos ACL.}}{7}{table.caption.6}\protected@file@percent }
+\newlabel{tab:usuarios_mqtt}{{2}{7}{Usuarios MQTT y sus permisos ACL}{table.caption.6}{}}
+\newlabel{lst:acl_llm}{{2}{7}{Extracto de \mbox {\texttt {acl.conf}} mostrando las restricciones del LLM Gateway}{lstlisting.2}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {2}{\ignorespaces Extracto de \mbox  {\texttt  {acl.conf}} mostrando las restricciones del LLM Gateway.}}{7}{lstlisting.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.5}Consideración de Seguridad: Puerto 1883}{7}{subsection.2.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Actualización de Firmware con Soporte TLS}{8}{section.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}ESP32-CAM: Conexión Segura}{8}{subsection.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Externalización de Credenciales}{8}{subsection.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Lógica de Reconexión}{8}{subsection.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}LLM Local e Integración}{9}{section.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Ollama + phi3:mini}{9}{subsection.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}LLM Gateway (FastAPI)}{9}{subsection.4.2}\protected@file@percent }
+\newlabel{lst:ollama_format}{{3}{9}{Forzado de formato JSON en las peticiones a Ollama}{lstlisting.3}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {3}{\ignorespaces Forzado de formato JSON en las peticiones a Ollama.}}{9}{lstlisting.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Prompts Dinámicos}{10}{subsection.4.3}\protected@file@percent }
+\newlabel{lst:prompt_builder}{{4}{10}{Constructor de prompts dinámicos para decisión de seguridad}{lstlisting.4}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {4}{\ignorespaces Constructor de prompts dinámicos para decisión de seguridad.}}{10}{lstlisting.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Manejo de Errores y Fallback Determinístico}{10}{subsection.4.4}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Lógica del fallback determinístico cuando el LLM no está disponible.}}{10}{table.caption.7}\protected@file@percent }
+\newlabel{tab:fallback}{{3}{10}{Lógica del fallback determinístico cuando el LLM no está disponible}{table.caption.7}{}}
+\gdef \LT@i {\LT@entry 
+    {4}{111.58464pt}\LT@entry 
+    {1}{68.9055pt}\LT@entry 
+    {4}{211.16928pt}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Servidor MCP (Model Context Protocol)}{11}{section.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Tools Disponibles}{11}{subsection.5.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Tools MCP disponibles para el agente LangGraph.}}{11}{table.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Flujo de Comunicación}{11}{subsection.5.2}\protected@file@percent }
+\gdef \LT@ii {\LT@entry 
+    {4}{111.58464pt}\LT@entry 
+    {4}{83.13188pt}\LT@entry 
+    {1}{196.9429pt}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Agente Autónomo LangGraph}{12}{section.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Arquitectura del Grafo}{12}{subsection.6.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Diagrama de flujo del agente LangGraph con 15 nodos y rutas de decisión.}}{12}{figure.caption.8}\protected@file@percent }
+\newlabel{fig:langgraph_flow}{{2}{12}{Diagrama de flujo del agente LangGraph con 15 nodos y rutas de decisión}{figure.caption.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Descripción de Nodos}{12}{subsection.6.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Nodos del StateGraph LangGraph.}}{12}{table.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}Ruteo Condicional}{13}{subsection.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.4}Bypass Crítico (Sin LLM)}{13}{subsection.6.4}\protected@file@percent }
+\gdef \LT@iii {\LT@entry 
+    {1}{83.13188pt}\LT@entry 
+    {1}{140.0374pt}\LT@entry 
+    {1}{154.26378pt}}
+\@writefile{toc}{\contentsline {section}{\numberline {7}Bitácora de Problemas Detectados y Soluciones}{14}{section.7}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Bitácora de problemas del LLM y soluciones aplicadas.}}{14}{table.6}\protected@file@percent }
+\newlabel{tab:bitacora}{{6}{14}{Bitácora de Problemas Detectados y Soluciones}{table.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {8}Ensayo Crítico: LLM vs. Control Determinista}{15}{section.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.1}Introducción}{15}{subsection.8.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.2}Tabla Comparativa}{15}{subsection.8.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces Comparación entre control determinista y basado en LLM.}}{15}{table.caption.9}\protected@file@percent }
+\newlabel{tab:comparativa}{{7}{15}{Comparación entre control determinista y basado en LLM}{table.caption.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.3}Análisis}{15}{subsection.8.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.4}Conclusión}{16}{subsection.8.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9}Análisis de Vulnerabilidad IoT}{17}{section.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.1}Introducción}{17}{subsection.9.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.2}Vulnerabilidad 1: MKR1000 sin TLS}{17}{subsection.9.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.3}Vulnerabilidad 2: Healthcheck sin autenticación}{17}{subsection.9.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.4}Vulnerabilidad 3: Certificados autofirmados}{17}{subsection.9.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.5}Vulnerabilidad 4: Sin rate limiting en API}{18}{subsection.9.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.6}Vulnerabilidad 5: Exposición de puertos Docker}{18}{subsection.9.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.7}Plan de Mitigación Priorizado}{18}{subsection.9.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {10}Conclusiones}{19}{section.10}\protected@file@percent }
+\gdef \@abspage@last{20}
