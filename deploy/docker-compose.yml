@@ -3,6 +3,7 @@ services:
     build:
       context: ..
       dockerfile: deploy/mosquitto/docker/Dockerfile
+      network: host
       args:
         - MQTT_BROKER_IP=${MQTT_BROKER_IP:-127.0.0.1}
     ports:
@@ -32,7 +33,7 @@ services:
       - MQTT_PASS_COAPBRIDGE=${MQTT_PASS_COAPBRIDGE}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pgrep mosquitto | head -1 | xargs kill -0"]
+      test: [ "CMD-SHELL", "pgrep mosquitto | head -1 | xargs kill -0" ]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -42,6 +43,7 @@ services:
     build:
       context: ..
       dockerfile: deploy/nodered/Dockerfile
+      network: host
       args:
         - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
     ports:
@@ -65,6 +67,7 @@ services:
     build:
       context: ..
       dockerfile: deploy/reconocimiento/Dockerfile
+      network: host
     ports:
       - "8000:8000"
     volumes:
@@ -74,7 +77,7 @@ services:
       - /dev/video0:/dev/video0
       - /dev/video1:/dev/video1
     group_add:
-      - "983"  # video group
+      - "983" # video group
     environment:
       - MODE=PROD_MQTT
       - EQUIPO_ID=equipo69
@@ -97,6 +100,7 @@ services:
     build:
       context: ..
       dockerfile: deploy/interfaz/Dockerfile
+      network: host
     ports:
       - "80:80"
       - "443:443"
@@ -111,6 +115,7 @@ services:
     build:
       context: ..
       dockerfile: deploy/ollama/Dockerfile
+      network: host
     ports:
       - "11434:11434"
     volumes:
@@ -126,6 +131,7 @@ services:
     build:
       context: ..
       dockerfile: deploy/llm-gateway/Dockerfile
+      network: host
     ports:
       - "8001:8000"
     volumes:
@@ -160,6 +166,7 @@ services:
     build:
       context: ..
       dockerfile: deploy/mcp-server/Dockerfile
+      network: host
     ports:
       - "8002:8002"
     volumes:
@@ -179,6 +186,7 @@ services:
     build:
       context: ..
       dockerfile: deploy/digital-twin/Dockerfile
+      network: host
     ports:
       - "8003:8000"
     volumes:
@@ -198,6 +206,34 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  influxdb:
+    image: influxdb:2.7
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_ORG=smarthome
+      - DOCKER_INFLUXDB_INIT_BUCKET=sensores
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=adminpassword123
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=myinfluxadmintoken123
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - influxdb
+    restart: unless-stopped
+    
   coap-bridge:
     build:
       context: ..
@@ -225,3 +261,4 @@ volumes:
   mosquitto_data:
   mosquitto_logs:
   ollama_data:
+  influxdb_data:

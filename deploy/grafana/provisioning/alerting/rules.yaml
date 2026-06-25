@@ -1,0 +1,61 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: 'SmartHome Alert Rules'
+    folder: 'Alertas'
+    interval: '10s'
+    rules:
+      - uid: 'temp_alert_uid'
+        title: 'Alerta Temperatura Alta (>28C)'
+        condition: 'B'
+        data:
+          - refId: 'A'
+            relativeTimeRange:
+              from: 120
+              to: 0
+            datasourceUid: 'InfluxDB'
+            model:
+              query: "from(bucket: \"sensores\")\n  |> range(start: -2m)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"sensor_data\")\n  |> filter(fn: (r) => r[\"_field\"] == \"temperatura\")\n  |> mean()"
+          - refId: 'B'
+            relativeTimeRange:
+              from: 120
+              to: 0
+            datasourceUid: '__expr__'
+            model:
+              expression: '$A > 28'
+              type: 'math'
+        noDataState: 'OK'
+        execErrState: 'OK'
+        for: '2m'
+        annotations:
+          summary: 'La temperatura ha superado los 28C por mas de 2 minutos.'
+        labels:
+          severity: 'warning'
+
+      - uid: 'gas_alert_uid'
+        title: 'Alerta Gas Alto (>400ppm)'
+        condition: 'B'
+        data:
+          - refId: 'A'
+            relativeTimeRange:
+              from: 60
+              to: 0
+            datasourceUid: 'InfluxDB'
+            model:
+              query: "from(bucket: \"sensores\")\n  |> range(start: -1m)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"sensor_data\")\n  |> filter(fn: (r) => r[\"_field\"] == \"gas\")\n  |> mean()"
+          - refId: 'B'
+            relativeTimeRange:
+              from: 60
+              to: 0
+            datasourceUid: '__expr__'
+            model:
+              expression: '$A > 400'
+              type: 'math'
+        noDataState: 'OK'
+        execErrState: 'OK'
+        for: '1m'
+        annotations:
+          summary: 'El nivel de gas ha superado los 400 ppm por mas de 1 minuto.'
+        labels:
+          severity: 'critical'

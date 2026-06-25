@@ -1,0 +1,72 @@
+services:
+  mosquitto:
+    build:
+      context: ..
+      dockerfile: deploy/mosquitto/docker/Dockerfile
+      network: host
+      args:
+        - MQTT_BROKER_IP=${MQTT_BROKER_IP:-127.0.0.1}
+    ports:
+      - "8883:8883"
+      - "1884:1884"
+    volumes:
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./mosquitto/config/acl.conf:/mosquitto/config/acl.conf:ro
+      - ./mosquitto/certs:/mosquitto/certs:ro
+      - ./mosquitto/config/passwd:/mosquitto/config/passwd:rw
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_logs:/mosquitto/log
+    environment:
+      - MQTT_USER_MKR1000=${MQTT_USER_MKR1000}
+      - MQTT_PASS_MKR1000=${MQTT_PASS_MKR1000}
+      - MQTT_USER_ESP32CAM=${MQTT_USER_ESP32CAM}
+      - MQTT_PASS_ESP32CAM=${MQTT_PASS_ESP32CAM}
+      - MQTT_USER_BACKEND=${MQTT_USER_BACKEND}
+      - MQTT_PASS_BACKEND=${MQTT_PASS_BACKEND}
+      - MQTT_USER_NODERED=${MQTT_USER_NODERED}
+      - MQTT_PASS_NODERED=${MQTT_PASS_NODERED}
+      - MQTT_USER_LLMGATEWAY=${MQTT_USER_LLMGATEWAY}
+      - MQTT_PASS_LLMGATEWAY=${MQTT_PASS_LLMGATEWAY}
+      - MQTT_USER_DIGITALTWIN=${MQTT_USER_DIGITALTWIN}
+      - MQTT_PASS_DIGITALTWIN=${MQTT_PASS_DIGITALTWIN}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep mosquitto | head -1 | xargs kill -0"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  influxdb:
+    image: influxdb:2.7
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_ORG=smarthome
+      - DOCKER_INFLUXDB_INIT_BUCKET=sensores
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=adminpassword123
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=myinfluxadmintoken123
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - influxdb
+    restart: unless-stopped
+
+volumes:
+  mosquitto_certs:
+  mosquitto_data:
+  mosquitto_logs:
+  influxdb_data:
