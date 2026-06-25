@@ -4,7 +4,7 @@
 # =============================================================================
 # 1. Validates that all required TLS certificates exist before starting the
 #    Mosquitto broker.
-# 2. Generates /mosquitto/config/passwd at runtime from the 6 per-client
+# 2. Generates /mosquitto/config/passwd at runtime from the 7 per-client
 #    MQTT_USER_* / MQTT_PASS_* environment variables.
 # 3. Starts Mosquitto with the loaded configuration.
 #
@@ -37,12 +37,12 @@ if [ "$missing" -ne 0 ]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Runtime passwd generation from per-client env vars (T-002)
+# Runtime passwd generation from per-client env vars (T-002 + T-005)
 # ---------------------------------------------------------------------------
 # Clear existing passwd file — credentials are regenerated on every start.
 > "$PASSWD_FILE"
 
-for user in MKR1000 ESP32CAM BACKEND NODERED LLMGATEWAY DIGITALTWIN; do
+for user in MKR1000 ESP32CAM BACKEND NODERED LLMGATEWAY DIGITALTWIN COAPBRIDGE; do
     eval "username=\${MQTT_USER_$user}"
     eval "password=\${MQTT_PASS_$user}"
 

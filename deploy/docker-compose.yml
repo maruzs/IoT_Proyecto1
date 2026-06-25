@@ -28,6 +28,8 @@ services:
       - MQTT_PASS_LLMGATEWAY=${MQTT_PASS_LLMGATEWAY}
       - MQTT_USER_DIGITALTWIN=${MQTT_USER_DIGITALTWIN}
       - MQTT_PASS_DIGITALTWIN=${MQTT_PASS_DIGITALTWIN}
+      - MQTT_USER_COAPBRIDGE=${MQTT_USER_COAPBRIDGE}
+      - MQTT_PASS_COAPBRIDGE=${MQTT_PASS_COAPBRIDGE}
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pgrep mosquitto | head -1 | xargs kill -0"]
@@ -191,6 +193,28 @@ services:
       - MQTT_CA_CERT=${MQTT_CA_CERT:-/certs/ca.crt}
       - EQUIPO_ID=${EQUIPO_ID:-equipo69}
       - SNAPSHOT_PATH=/app/data/twin_snapshot.json
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+    restart: unless-stopped
+
+  coap-bridge:
+    build:
+      context: ..
+      dockerfile: deploy/coap-bridge/Dockerfile
+    ports:
+      - "5683:5683/udp"
+    volumes:
+      - ./mosquitto/certs/ca.crt:/certs/ca.crt:ro
+    environment:
+      - MQTT_BROKER=${MQTT_BROKER:-mosquitto}
+      - MQTT_PORT=${MQTT_PORT:-8883}
+      - MQTT_USER=${MQTT_USER_COAPBRIDGE}
+      - MQTT_PASS=${MQTT_PASS_COAPBRIDGE}
+      - MQTT_TLS=${MQTT_TLS:-true}
+      - MQTT_CA_CERT=${MQTT_CA_CERT:-/certs/ca.crt}
+      - EQUIPO_ID=${EQUIPO_ID:-equipo69}
+      - COAP_PORT=${COAP_PORT:-5683}
     depends_on:
       mosquitto:
         condition: service_healthy
