@@ -50,7 +50,9 @@ class SensorResource(resource.Resource):
     async def render_post(self, request):
         try:
             data = validate_json(request.payload, self.expected_field)
-            self.publisher.publish(self.sensor_type, data)
+            if not self.publisher.publish(self.sensor_type, data):
+                logger.error("MQTT publish failed for /sensores/%s", self.sensor_type)
+                return Message(code=Code.INTERNAL_SERVER_ERROR)
             return Message(code=Code.CHANGED)
         except ValueError as exc:
             logger.warning(

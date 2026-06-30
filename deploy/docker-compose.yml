@@ -201,6 +201,10 @@ services:
       - MQTT_CA_CERT=${MQTT_CA_CERT:-/certs/ca.crt}
       - EQUIPO_ID=${EQUIPO_ID:-equipo69}
       - SNAPSHOT_PATH=/app/data/twin_snapshot.json
+      # ponytail: expose timing knobs so integration tests can consolidate fast
+      # without changing production defaults (PROD uses the code defaults).
+      - CONSOLIDATION_INTERVAL=${CONSOLIDATION_INTERVAL:-60}
+      - PREDICTION_INTERVAL=${PREDICTION_INTERVAL:-600}
     depends_on:
       mosquitto:
         condition: service_healthy
