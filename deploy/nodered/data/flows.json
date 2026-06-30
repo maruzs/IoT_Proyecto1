@@ -533,7 +533,7 @@
         "type": "mqtt out",
         "z": "f6f2187d.f17ca8",
         "name": "Publicar control Cámara",
-        "topic": "smarthome/equipo69/camara/control",
+        "topic": "smarthome/equipo69/camara/captura",
         "qos": "0",
         "retain": "false",
         "respTopic": "",
