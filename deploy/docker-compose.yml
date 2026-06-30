@@ -31,6 +31,8 @@ services:
       - MQTT_PASS_DIGITALTWIN=${MQTT_PASS_DIGITALTWIN}
       - MQTT_USER_COAPBRIDGE=${MQTT_USER_COAPBRIDGE}
       - MQTT_PASS_COAPBRIDGE=${MQTT_PASS_COAPBRIDGE}
+      - MQTT_USER_MQTTTOINFLUX=${MQTT_USER_MQTTTOINFLUX}
+      - MQTT_PASS_MQTTTOINFLUX=${MQTT_PASS_MQTTTOINFLUX}
     restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "pgrep mosquitto | head -1 | xargs kill -0" ]
@@ -221,6 +223,7 @@ services:
       - DOCKER_INFLUXDB_INIT_USERNAME=admin
       - DOCKER_INFLUXDB_INIT_PASSWORD=adminpassword123
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=myinfluxadmintoken123
+      - DOCKER_INFLUXDB_INIT_RETENTION=168h
     volumes:
       - influxdb_data:/var/lib/influxdb2
     restart: unless-stopped
@@ -258,6 +261,25 @@ services:
     depends_on:
       mosquitto:
         condition: service_healthy
+    restart: unless-stopped
+
+  mqtt-to-influx:
+    build:
+      context: ..
+      dockerfile: deploy/mqtt-to-influx/Dockerfile
+    environment:
+      - MQTT_BROKER=mosquitto
+      - MQTT_PORT=1884
+      - MQTT_USER=${MQTT_USER_MQTTTOINFLUX}
+      - MQTT_PASSWORD=${MQTT_PASS_MQTTTOINFLUX}
+      - EQUIPO_ID=${EQUIPO_ID:-equipo69}
+      - INFLUX_URL=http://influxdb:8086/api/v2/write?org=smarthome&bucket=sensores&precision=s
+      - INFLUX_TOKEN=${INFLUX_TOKEN:-myinfluxadmintoken123}
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+      influxdb:
+        condition: service_started
     restart: unless-stopped
 
 volumes:

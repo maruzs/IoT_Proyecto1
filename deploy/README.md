@@ -1,6 +1,6 @@
 # SmartHome IoT Infrastructure — Docker Compose
 
-Docker Compose infrastructure for the SmartHome IoT project. Runs a Mosquitto MQTT broker and Node-RED dashboard in isolated containers.
+Docker Compose infrastructure for the SmartHome IoT project. Runs a Mosquitto MQTT broker, Node-RED dashboard, backend services, LLM gateway, InfluxDB, Grafana, CoAP bridge, and MQTT-to-InfluxDB ingestion in isolated containers.
 
 ## Prerequisites
 
@@ -37,6 +37,7 @@ docker compose down
 | Node-RED | http://localhost:1880 | — | Visual flow editor y dashboard |
 | Mosquitto (TLS) | mqtts://localhost:8883 | TLS + user/password | Servicios internos (backend, Node-RED) |
 | Mosquitto (plain) | mqtt://localhost:1884 | user/password | Placas embebidas (MKR1000, ESP32-CAM) |
+| MQTT to InfluxDB | — (internal) | user/password | Subscribe MQTT `smarthome/equipo69/#` y escribe en InfluxDB |
 
 ## Persistence
 
