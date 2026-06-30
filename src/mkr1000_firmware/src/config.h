@@ -45,7 +45,8 @@
 // ---------------------------------------------------------------------------
 // CoAP Configuration
 // ---------------------------------------------------------------------------
-#define COAP_SERVER     "192.168.1.100" // Se sobrescribe desde secrets.h si aplica
+// El host CoAP es el mismo que MQTT_SERVER (definido en secrets.h).
+// Se pasa a initCoAP() desde .ino via MQTT_SERVER.
 #define COAP_PORT       5683            // Puerto del CoAP Bridge
 #define COAP_LOCAL_PORT 5684            // Puerto UDP local del MKR1000
 

@@ -623,6 +623,7 @@ main() {
         HOP2="SKIP"
         HOP3="SKIP"
         HOP4="FAIL"
+        HOP5="FAIL"
     fi
 
     phase_report

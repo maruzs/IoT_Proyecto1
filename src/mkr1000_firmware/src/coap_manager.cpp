@@ -53,7 +53,7 @@ void coapSendSensorData(const SensorData& data) {
   }
 
   if (data.gasValid) {
-    snprintf(payload, sizeof(payload), "{\"gas\":%d}", data.gas);
+    snprintf(payload, sizeof(payload), "{\"gas\":%.2f}", (float)data.gas);
     sendSensor(ip, "sensores/gas", payload);
   }
 
