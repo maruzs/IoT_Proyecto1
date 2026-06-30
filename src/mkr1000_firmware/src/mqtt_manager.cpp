@@ -1,5 +1,6 @@
 #include "mqtt_manager.h"
 #include "config.h"
+#include "secrets.h"
 #include <ArduinoJson.h>
 #include <string.h>
 #include <Arduino.h>
@@ -25,11 +26,24 @@ void initMQTT(WiFiClient& client, const char* server,
 }
 
 bool ensureConnected() {
+    // Reconnect WiFi if lost
+    if (WiFi.status() != WL_CONNECTED) {
+        WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+        unsigned long wStart = millis();
+        while (WiFi.status() != WL_CONNECTED) {
+            delay(500);
+            if (millis() - wStart > 15000) break;
+        }
+    }
+    // Reconnect MQTT if needed
     if (!mqttClient.connected()) {
-        if (mqttClient.connect(EQUIPO_ID, mqttUsername, mqttPassword)) {
+        int rc = mqttClient.connect(EQUIPO_ID, mqttUsername, mqttPassword);
+        if (rc) {
             subscribeToControlTopics();
+            Serial.println("MQTT CONNECTED");
             return true;
         }
+        Serial.print("MQTT FAIL rc="); Serial.println(mqttClient.state());
         return false;
     }
     return true;

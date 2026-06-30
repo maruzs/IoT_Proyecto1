@@ -24,20 +24,36 @@ void setup() {
     delay(500);
     Serial.print(".");
     if (millis() - wifiStart > 15000) {
-      Serial.println("\nWiFi TIMEOUT");
+      int s = WiFi.status();
+      Serial.print("\nWiFi TIMEOUT (status="); Serial.print(s); Serial.println(")");
+      Serial.print("Retry begin..."); WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+      wifiStart = millis();
+      while (WiFi.status() != WL_CONNECTED && millis() - wifiStart < 30000) {
+        delay(500); Serial.print(".");
+      }
       break;
     }
   }
   if (WiFi.status() == WL_CONNECTED) {
     Serial.println("\nWiFi OK");
-    // NTP no necesario: MKR1000 usa puerto 1884 non-TLS
+    uint32_t lip = WiFi.localIP(), gip = WiFi.gatewayIP();
+    Serial.print("IP: ");
+    Serial.print((lip >> 24) & 0xFF); Serial.print('.');
+    Serial.print((lip >> 16) & 0xFF); Serial.print('.');
+    Serial.print((lip >> 8) & 0xFF); Serial.print('.');
+    Serial.println(lip & 0xFF);
+    Serial.print("GW: ");
+    Serial.print((gip >> 24) & 0xFF); Serial.print('.');
+    Serial.print((gip >> 16) & 0xFF); Serial.print('.');
+    Serial.print((gip >> 8) & 0xFF); Serial.print('.');
+    Serial.println(gip & 0xFF);
     Serial.print("MQTT: "); Serial.println(MQTT_SERVER);
     initMQTT(mkrClient, MQTT_SERVER, MQTT_PORT, MQTT_USER, MQTT_PASSWORD);
   }
 }
 
 void loop() {
-  if (!ensureConnected()) { delay(1000); return; }
+  if (!ensureConnected()) { delay(1000); Serial.println("MQTT retry..."); return; }
   mqttLoop();
   checkDoorLedTimeout();
   if (millis() - lastPublishTime >= PUBLISH_INTERVAL_MS) {
@@ -47,6 +63,8 @@ void loop() {
     buildSensorJSON(data, jsonBuffer, sizeof(jsonBuffer));
     if (publishData(jsonBuffer)) {
       Serial.println(jsonBuffer);
+    } else {
+      Serial.println("PUB FAIL");
     }
   }
 }
