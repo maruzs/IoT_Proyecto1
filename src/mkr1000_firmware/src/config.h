@@ -43,6 +43,13 @@
 #define PIN_LED_PUERTA 8 // Door LED (digital output). Options: 0-25
 
 // ---------------------------------------------------------------------------
+// CoAP Configuration
+// ---------------------------------------------------------------------------
+#define COAP_SERVER     "192.168.1.100" // Se sobrescribe desde secrets.h si aplica
+#define COAP_PORT       5683            // Puerto del CoAP Bridge
+#define COAP_LOCAL_PORT 5684            // Puerto UDP local del MKR1000
+
+// ---------------------------------------------------------------------------
 // Timing
 // ---------------------------------------------------------------------------
 #define PUBLISH_INTERVAL_MS 2000 // Intervalo entre publicaciones MQTT
