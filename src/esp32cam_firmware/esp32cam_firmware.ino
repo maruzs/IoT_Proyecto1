@@ -80,7 +80,21 @@ void setup() {
         return;
     }
     subscribeToCameraControl(mqttCallback);
-    publishCameraEvent("camara_lista");
+    
+    // Small delay to let MQTT pipeline stabilize before publishing
+    delay(500);
+    if (publishCameraEvent("camara_lista")) {
+        Serial.println("Evento camara_lista publicado");
+    } else {
+        Serial.println("WARN: Evento camara_lista NO publicado (reintentando)");
+        delay(1000);
+        mqttLoop();
+        if (publishCameraEvent("camara_lista")) {
+            Serial.println("Evento camara_lista publicado (2do intento)");
+        } else {
+            Serial.println("WARN: Evento camara_lista NO publicado incluso tras reintento");
+        }
+    }
     Serial.println("Listo.");
 }
 
