@@ -56,6 +56,7 @@ HOP1="FAIL"
 HOP2="FAIL"
 HOP3="SKIP"
 HOP4="FAIL"
+HOP5="FAIL"
 
 # Temporary files cleaned on exit
 TEMP_FILES=()
@@ -375,6 +376,7 @@ phase_wait_for_board_data() {
 # ---------------------------------------------------------------------------
 phase_verify_hops() {
     local data_file="$1"
+    local timeout_secs="$2"
     log_phase "Phase 4: Verify hops"
 
     # -----------------------------------------------------------------------
@@ -523,11 +525,33 @@ phase_verify_hops() {
             HOP4="FAIL"
         else
             green "  ✅ Published test decision to smarthome/${EQUIPO}/llm/decision"
-            green "  ✅ Node-RED flow correctly configured (mqtt_in on smarthome/+/datos)"
-            # ponytail: Node-RED doesn't expose an HTTP API for decisions;
-            # MQTT subscription verification of the flow config is sufficient.
-            HOP4="PASS"
+        green "  ✅ Node-RED flow correctly configured (mqtt_in on smarthome/+/datos)"
+        # ponytail: Node-RED doesn't expose an HTTP API for decisions;
+        # MQTT subscription verification of the flow config is sufficient.
+        HOP4="PASS"
         fi
+    fi
+
+    # -----------------------------------------------------------------------
+    # HOP5: CoAP -> Bridge -> MQTT
+    # -----------------------------------------------------------------------
+    echo ""
+    echo "HOP5 — CoAP -> Bridge -> MQTT (sensores/+)"
+
+    local coap_file
+    coap_file=$(mktemp_file)
+    set +e
+    mosquitto_sub_user "${MQTT_USER_DIGITALTWIN}" "${MQTT_PASS_DIGITALTWIN}" \
+        -t "smarthome/${EQUIPO}/sensores/+" -C 1 -W "$timeout_secs" > "$coap_file"
+    local coap_exit=$?
+    set -e
+
+    if [ "$coap_exit" -eq 0 ] && [ -s "$coap_file" ]; then
+        green "  ✅ CoAP data received via Bridge: $(head -c 200 "$coap_file")"
+        HOP5="PASS"
+    else
+        red "  ❌ No CoAP data received within ${WAIT_MINS} minutes"
+        HOP5="FAIL"
     fi
 }
 
@@ -537,11 +561,12 @@ phase_verify_hops() {
 phase_report() {
     log_phase "Phase 5: E2E Verification Report"
 
-    local h1 h2 h3 h4
+    local h1 h2 h3 h4 h5
     if [ "$HOP1" = "PASS" ]; then h1="\033[32m[PASS]\033[0m"; else h1="\033[31m[${HOP1}]\033[0m"; fi
     if [ "$HOP2" = "PASS" ]; then h2="\033[32m[PASS]\033[0m"; else h2="\033[31m[${HOP2}]\033[0m"; fi
     if [ "$HOP3" = "PASS" ]; then h3="\033[32m[PASS]\033[0m"; elif [ "$HOP3" = "SKIP" ]; then h3="\033[33m[SKIP]\033[0m"; else h3="\033[31m[${HOP3}]\033[0m"; fi
     if [ "$HOP4" = "PASS" ]; then h4="\033[32m[PASS]\033[0m"; else h4="\033[31m[${HOP4}]\033[0m"; fi
+    if [ "$HOP5" = "PASS" ]; then h5="\033[32m[PASS]\033[0m"; else h5="\033[31m[${HOP5}]\033[0m"; fi
 
     cat <<EOF
 ╔══════════════════════════════════════════════╗
@@ -551,11 +576,13 @@ phase_report() {
 ║  HOP2  MQTT -> Digital Twin         ${h2}  ║
 ║  HOP3  Digital Twin -> Predictions  ${h3}  ║
 ║  HOP4  MQTT -> Node-RED             ${h4}  ║
+║  HOP5  CoAP -> Bridge -> MQTT       ${h5}  ║
 ╚══════════════════════════════════════════════╝
 EOF
 
     if [ "$HOP1" = "PASS" ] && [ "$HOP2" = "PASS" ] && \
-       ([ "$HOP3" = "PASS" ] || [ "$HOP3" = "SKIP" ]) && [ "$HOP4" = "PASS" ]; then
+       ([ "$HOP3" = "PASS" ] || [ "$HOP3" = "SKIP" ]) && \
+       [ "$HOP4" = "PASS" ] && [ "$HOP5" = "PASS" ]; then
         green "✅ E2E verification passed"
         return 0
     else
@@ -589,13 +616,14 @@ main() {
     phase_start_services
 
     if phase_wait_for_board_data; then
-        phase_verify_hops "$BOARD_DATA_FILE"
+        phase_verify_hops "$BOARD_DATA_FILE" "$((WAIT_MINS * 60))"
     else
         # No board data: HOP1 fails, dependent hops already SKIP/FAIL
         HOP1="FAIL"
         HOP2="SKIP"
         HOP3="SKIP"
         HOP4="FAIL"
+        HOP5="FAIL"
     fi
 
     phase_report

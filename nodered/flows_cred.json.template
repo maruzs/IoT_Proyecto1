@@ -1,0 +1,9 @@
+{
+    "telegram_bot_config": {
+        "token": "8613649005:AAGDGJSRBRDsmGFZ2L_2C1met4dVpW99JQQ"
+    },
+    "mqtt_broker_config": {
+        "user": "nodered-smarthome",
+        "password": "test123"
+    }
+}

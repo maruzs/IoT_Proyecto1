@@ -3,6 +3,7 @@
 #include "src/sensor_reader.h"
 #include "src/mqtt_manager.h"
 #include "src/message_builder.h"
+#include "src/coap_manager.h"
 #include <WiFi101.h>
 #include <WiFiClient.h>
 
@@ -49,6 +50,7 @@ void setup() {
     Serial.println(gip & 0xFF);
     Serial.print("MQTT: "); Serial.println(MQTT_SERVER);
     initMQTT(mkrClient, MQTT_SERVER, MQTT_PORT, MQTT_USER, MQTT_PASSWORD);
+    initCoAP(MQTT_SERVER, COAP_PORT);
   }
 }
 
@@ -66,5 +68,6 @@ void loop() {
     } else {
       Serial.println("PUB FAIL");
     }
+    coapSendSensorData(data);
   }
 }
