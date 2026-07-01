@@ -704,8 +704,8 @@
     "type": "function",
     "z": "f6f2187d.f17ca8",
     "name": "Reglas de Control Autom\u00e1tico",
-    "func": "var temp = msg.payload.temperatura;\nvar gas = msg.payload.gas;\nvar alertTriggered = false;\nvar alertMsg = \"\";\n\nif (temp && temp > 30) {\n    alertTriggered = true;\n    alertMsg += \"\u26a0\ufe0f \u00a1Temperatura cr\u00edtica: \" + temp + \"\u00b0C!\\n\";\n}\n\nif (gas && gas > 1020) {\n    alertTriggered = true;\n    alertMsg += \"\ud83d\udd25 \u00a1Alerta de Gas detectada: \" + gas + \" ppm!\\n\";\n}\n\nif (alertTriggered) {\n    context.set(\"normal_count\", 0);\n    var telegramMsg = {\n        payload: {\n            chatId: -1003906928304,\n            type: \"message\",\n            content: \"\ud83d\udea8 *[SmartHome ALERTA]*\\n\\n\" + alertMsg + \"\\n*Timestamp:* \" + new Date().toLocaleString()\n        }\n    };\n    return [\n        { payload: \"ON\" },\n        telegramMsg\n    ];\n} else {\n    var count = (context.get(\"normal_count\") || 0) + 1;\n    context.set(\"normal_count\", count);\n    if (count >= 3) {\n        context.set(\"normal_count\", 0);\n        return [\n            { payload: \"OFF\" },\n            null\n        ];\n    }\n    return [null, null];\n}",
-    "outputs": 2,
+    "func": "// T-018: per-type cooldown + alerta/notificacion publish\nvar temp = msg.payload.temperatura;\nvar gas = msg.payload.gas;\nvar tipo = msg.tipo || msg.payload.tipo || \"sensores\";  // allow external alert injection\n\n// Cooldown config (5 min = 300000 ms)\nvar COOLDOWN_MS = 300000;\nvar now = Date.now();\n\n// Read per-type cooldown timestamps\nvar lastGasAlert = context.get(\"last_gas_alert\") || 0;\nvar lastTempAlert = context.get(\"last_temp_alert\") || 0;\n\nvar alertTriggered = false;\nvar alertMsg = \"\";\nvar alertTipo = \"\";\nvar alertValor = 0;\nvar alertSensor = \"\";\n\nif (temp && temp > 30) {\n    if ((now - lastTempAlert) > COOLDOWN_MS) {\n        alertTriggered = true;\n        alertMsg += \"\u26a0\ufe0f \u00a1Temperatura cr\u00edtica: \" + temp + \"\u00b0C!\\n\";\n        context.set(\"last_temp_alert\", now);\n        alertTipo = \"critica\";\n        alertValor = temp;\n        alertSensor = \"temperatura\";\n    }\n}\n\nif (gas && gas > 400) {\n    if ((now - lastGasAlert) > COOLDOWN_MS) {\n        alertTriggered = true;\n        alertMsg += \"\ud83d\udd25 \u00a1Alerta de Gas detectada: \" + gas + \" ppm!\\n\";\n        context.set(\"last_gas_alert\", now);\n        alertTipo = \"critica\";\n        alertValor = gas;\n        alertSensor = \"gas\";\n    }\n}\n\nif (alertTriggered) {\n    // ChatId from flow context (settable via env), fallback to hardcoded\n    var chatId = flow.get(\"telegram_chat_id\") || -1003906928304;\n    \n    var telegramMsg = {\n        payload: {\n            chatId: chatId,\n            type: \"message\",\n            content: \"\ud83d\udea8 *[SmartHome ALERTA]*\\n\\n\" + alertMsg + \"\\n*Timestamp:* \" + new Date().toLocaleString()\n        }\n    };\n    \n    // Notificacion para trazabilidad\n    var notificacion = {\n        topic: \"smarthome/equipo69/alerta/notificacion\",\n        payload: JSON.stringify({\n            timestamp: new Date().toISOString(),\n            tipo: alertTipo,\n            sensor: alertSensor,\n            valor: alertValor,\n            mensaje: alertMsg.trim(),\n            canal: \"telegram\"\n        }),\n        qos: 1,\n        retain: false\n    };\n    \n    return [\n        { payload: \"ON\" },\n        telegramMsg,\n        notificacion\n    ];\n} else {\n    // Normal state: count consecutive normal readings, turn LED off after 3\n    var count = (context.get(\"normal_count\") || 0) + 1;\n    context.set(\"normal_count\", count);\n    if (count >= 3) {\n        context.set(\"normal_count\", 0);\n        return [\n            { payload: \"OFF\" },\n            null,\n            null\n        ];\n    }\n    return [null, null, null];\n}\n",
+    "outputs": 3,
     "noerr": 0,
     "initialize": "context.set('normal_count', 0);",
     "finalize": "",
@@ -718,6 +718,9 @@
       ],
       [
         "telegram_out"
+      ],
+      [
+        "mqtt_out_alerta_notificacion"
       ]
     ]
   },
@@ -1340,6 +1343,50 @@
     },
     "x": 900,
     "y": 1420,
+    "wires": []
+  },
+  {
+    "id": "mqtt_in_alerta",
+    "type": "mqtt in",
+    "z": "f6f2187d.f17ca8",
+    "name": "Suscribir a Alertas Externas",
+    "topic": "smarthome/equipo69/alerta",
+    "qos": "1",
+    "datatype": "auto",
+    "broker": "mqtt_broker_config",
+    "x": 150,
+    "y": 360,
+    "wires": [
+      [
+        "func_alerta_externa"
+      ]
+    ]
+  },
+  {
+    "id": "func_alerta_externa",
+    "type": "function",
+    "z": "f6f2187d.f17ca8",
+    "name": "Normalizar Alerta Externa",
+    "func": "// Normalize external alerts from any service (Prediction Engine, Digital Twin, etc.)\n// Expected input: {\"sensor\": \"temperatura\", \"valor\": 31.2, \"tipo\": \"preventiva\", \"mensaje\": \"...\"}\n// or any format with temperatura/gas field\n\nvar payload = msg.payload;\n\n// If it's already a sensor-like payload, pass through\nif (payload && (payload.temperatura !== undefined || payload.gas !== undefined)) {\n    return msg;\n}\n\n// Otherwise, convert external alert format to sensor format\nif (payload && payload.sensor && payload.valor !== undefined) {\n    msg.payload = {};\n    msg.payload[payload.sensor] = payload.valor;\n    msg.tipo = payload.tipo || \"externa\";\n    \n    if (payload.mensaje) {\n        node.log(\"Alerta externa recibida: \" + payload.mensaje);\n    }\n    return msg;\n}\n\n// Unknown format \u2014 log and discard\nnode.warn(\"Formato de alerta no reconocido: \" + JSON.stringify(payload));\nreturn null;\n",
+    "x": 350,
+    "y": 360,
+    "wires": [
+      [
+        "rules_evaluator"
+      ]
+    ]
+  },
+  {
+    "id": "mqtt_out_alerta_notificacion",
+    "type": "mqtt out",
+    "z": "f6f2187d.f17ca8",
+    "name": "Publicar alerta/notificacion",
+    "topic": "",
+    "qos": "1",
+    "retain": "false",
+    "broker": "mqtt_broker_config",
+    "x": 750,
+    "y": 440,
     "wires": []
   }
 ]
