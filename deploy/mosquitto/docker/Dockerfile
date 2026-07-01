@@ -23,11 +23,13 @@ RUN openssl genrsa -out ca.key 2048 \
     && chmod 644 ca.crt ca.key server.crt server.key
 
 # Stage 2: Imagen final de Mosquitto
-FROM eclipse-mosquitto:1.6
+FROM eclipse-mosquitto:2
 
 COPY --from=cert-builder /certs/ /mosquitto/certs/
 COPY --from=cert-builder /certs/ca.crt /ca.crt
 
+# ponytail: acl.conf and entrypoint.sh are COPY'd at build time, not bind-mounted.
+#          If you modify them, run: docker compose up -d --build mosquitto
 COPY deploy/mosquitto/config/mosquitto.conf /mosquitto/config/mosquitto.conf
 COPY deploy/mosquitto/config/acl.conf /mosquitto/config/acl.conf
 COPY deploy/mosquitto/config/entrypoint.sh /entrypoint.sh

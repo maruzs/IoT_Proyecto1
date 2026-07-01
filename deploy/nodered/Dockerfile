@@ -45,6 +45,7 @@ RUN mkdir -p /etc/nodered-staging
 # Copiar archivos procesados del stage 1
 COPY --from=config /tmp/flows_cred.json /etc/nodered-staging/
 COPY --from=config /tmp/settings.js     /usr/src/node-red/.node-red/settings.js
+COPY --from=config /tmp/settings.js     /etc/nodered-staging/settings.js
 
 # Copiar flows.json del repo
 COPY nodered/flows.json /etc/nodered-staging/

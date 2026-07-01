@@ -48,10 +48,13 @@ services:
       network: host
       args:
         - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+        - MQTT_USER=${MQTT_USER_NODERED}
+        - MQTT_PASSWORD=${MQTT_PASS_NODERED}
     ports:
       - "1880:1880"
     volumes:
       - ./nodered/data:/data
+      - ./mosquitto/certs:/certs:ro
       - ./mosquitto/certs:/certs:ro
     depends_on:
       mosquitto:
@@ -274,7 +277,8 @@ services:
       - MQTT_PASSWORD=${MQTT_PASS_MQTTTOINFLUX}
       - EQUIPO_ID=${EQUIPO_ID:-equipo69}
       - INFLUX_URL=http://influxdb:8086/api/v2/write?org=smarthome&bucket=sensores&precision=s
-      - INFLUX_TOKEN=${INFLUX_TOKEN:-myinfluxadmintoken123}
+      - INFLUX_HOST=http://influxdb:8086
+      - INFLUX_TOKEN=${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN:-myinfluxadmintoken123}
     depends_on:
       mosquitto:
         condition: service_healthy
