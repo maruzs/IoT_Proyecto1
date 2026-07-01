@@ -1,9 +1,0 @@
-{
-    "mqtt_broker_config": {
-        "user": "equipo69",
-        "password": "IoT2026Secure!"
-    },
-    "telegram_bot_config": {
-        "botkey": "8845478827:AAF-VIRWIy5rhSP1f8kcBNmZYypsXF47x6s"
-    }
-}
