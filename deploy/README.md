@@ -125,6 +125,8 @@ cat deploy/mosquitto/config/passwd
 
 If the container exits immediately, ensure you ran `./scripts/generate-certs.sh` before `docker compose up -d`.
 
+> **NOTE**: If you modify `entrypoint.sh` or `acl.conf`, rebuild the mosquitto image: `docker compose up -d --build mosquitto`. These files are COPY'd at build time, not bind-mounted.
+
 ### Verify services are running
 
 ```bash

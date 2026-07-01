@@ -38,6 +38,7 @@ deploy/nodered/data/.config.*.json
 deploy/nodered/data/.config.*.json.backup
 deploy/nodered/data/.flows*.json.backup
 deploy/nodered/data/.nodered-initialized
+deploy/nodered/data/settings.js
 deploy/nodered/data/.npm/
 deploy/nodered/data/historial.csv
 
