@@ -4,6 +4,7 @@
 *.hex
 *.zip
 .ino.*
+deploy/boards/*.ino.map
 
 # Secrets — never commit real credentials
 **/secrets.h
@@ -48,6 +49,10 @@ deploy/.env
 # Planificación y notas del equipo
 planificacion/
 deploy/data/
+
+# SDD exploration artifacts — transient design research
+sdd/explore/
+sdd/t-004-mkr1000-coap-client/
 
 # Gentle AI — tooling artifacts (auto-generated)
 .atl/
