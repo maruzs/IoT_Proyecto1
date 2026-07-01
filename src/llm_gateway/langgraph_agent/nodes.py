@@ -643,14 +643,18 @@ async def direct_exec_node(state: SmartHomeState) -> dict:
     if deduced_tool:
         action = {"tool": deduced_tool, "args": deduced_args}
     # 2) Keyword-based fallback
-    elif _has_any(raw, {"prende", "prender", "enciende", "encender", "activa", "activar"}) and "led" in raw and "alerta" in raw:
+    # "luz" = "led" para usuarios que no usan el término técnico
+    _has_luz = lambda r: "led" in r or "luz" in r
+    _has_puerta = lambda r: "puerta" in r or "led puerta" in r or "luz puerta" in r
+
+    if _has_any(raw, {"prende", "prender", "enciende", "encender", "activa", "activar"}) and _has_luz(raw) and ("alerta" in raw or "alarma" in raw or "emergencia" in raw):
         action = {"tool": "activate_led_alerta", "args": {"estado": True}}
-    elif _has_any(raw, {"apaga", "apagar", "desactiva", "desactivar"}) and "led" in raw and "alerta" in raw:
+    elif _has_any(raw, {"apaga", "apagar", "desactiva", "desactivar"}) and _has_luz(raw) and ("alerta" in raw or "alarma" in raw or "emergencia" in raw):
         action = {"tool": "activate_led_alerta", "args": {"estado": False}}
     # LED puerta
-    elif _has_any(raw, {"abre", "abrir", "prende", "prender", "activa", "activar"}) and ("puerta" in raw or "led puerta" in raw):
+    elif _has_any(raw, {"abre", "abrir", "prende", "prender", "activa", "activar"}) and _has_puerta(raw):
         action = {"tool": "activate_led_puerta", "args": {"accion": "ON"}}
-    elif _has_any(raw, {"cierra", "cerrar", "apaga", "apagar", "desactiva", "desactivar"}) and ("puerta" in raw or "led puerta" in raw):
+    elif _has_any(raw, {"cierra", "cerrar", "apaga", "apagar", "desactiva", "desactivar"}) and _has_puerta(raw):
         action = {"tool": "activate_led_puerta", "args": {"accion": "OFF"}}
     # Cámara
     elif _has_any(raw, {"cámara", "camara", "foto", "captura", "capturar", "graba", "grabar",
